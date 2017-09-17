@@ -194,10 +194,16 @@ void UNetworkGameInstance::OnStartOnlineGameComplete(FName SessionName, bool bWa
 
 
 void UNetworkGameInstance::FindSessions(TSharedPtr<const FUniqueNetId> UserId, FName SessionName, bool bIsLAN, bool bIsPresence) {
+
+	UE_LOG(LogTemp, Warning, TEXT("FindSessions Called"));
+
 	// Get the OnlineSubsystem we want to work with
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("OnlineSub found"));
+
+
 		// Get the SessionInterface from our OnlineSubsystem
 		IOnlineSessionPtr Sessions = OnlineSub->GetSessionInterface();
 		if (Sessions.IsValid() && UserId.IsValid())
@@ -232,7 +238,9 @@ void UNetworkGameInstance::FindSessions(TSharedPtr<const FUniqueNetId> UserId, F
 
 
 void UNetworkGameInstance::OnFindSessionsComplete(bool bWasSuccessful) {
-	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OFindSessionsComplete bSuccess: %d"), bWasSuccessful));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnFindSessionsComplete bSuccess: %d"), bWasSuccessful));
+
+
 	// Get OnlineSubsystem we want to work with
 	IOnlineSubsystem* const OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
@@ -244,7 +252,7 @@ void UNetworkGameInstance::OnFindSessionsComplete(bool bWasSuccessful) {
 			// Clear the Delegate handle, since we finished this call
 			Sessions->ClearOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegateHandle);
 			// Just debugging the Number of Search results. Can be displayed in UMG or something later on
-			//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("Num Search Results: %d"), SessionSearch->SearchResults.Num()));
+			GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("Num Search Results: %d"), SessionSearch->SearchResults.Num()));
 
 			TArray<FCustomBlueprintSessionResult> CustomSessionResults;
 
@@ -291,15 +299,26 @@ void UNetworkGameInstance::OnFindSessionsComplete(bool bWasSuccessful) {
 				}
 			}
 
+			GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnFindSessionsComplete bSuccess: %d"), bWasSuccessful));
+			UE_LOG(LogTemp, Warning, TEXT("OnFindSessionsComplete %b"), bWasSuccessful);
+
+
 			//call UMG to show sessions after the search ends
 			OnFoundSessionsCompleteUMG(CustomSessionResults);
 
+		}
+		else {
+			GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnFindSessionsComplete WARNING: Sessions Not Valid")));
+			UE_LOG(LogTemp, Warning, TEXT("OnFindSessionsComplete WARNING: Sessions Not Valid"));
 		}
 	}
 }
 
 
 bool UNetworkGameInstance::JoinASession(TSharedPtr<const FUniqueNetId> UserId, FName SessionName, const FOnlineSessionSearchResult& SearchResult) {
+
+
+
 	// Return bool
 	bool bSuccessful = false;
 	// Get OnlineSubsystem we want to work with
@@ -315,7 +334,10 @@ bool UNetworkGameInstance::JoinASession(TSharedPtr<const FUniqueNetId> UserId, F
 
 			// Call the "JoinSession" Function with the passed "SearchResult". The "SessionSearch->SearchResults" can be used to get such a
 			// "FOnlineSessionSearchResult" and pass it. Pretty straight forward!
-			bSuccessful = Sessions->JoinSession(*UserId, SessionName, SearchResult);
+
+
+
+			bSuccessful = Sessions->JoinSession(*UserId, SessionName, SearchResult);  // <---- the trail leads here!!
 		}
 	}
 
@@ -325,6 +347,7 @@ bool UNetworkGameInstance::JoinASession(TSharedPtr<const FUniqueNetId> UserId, F
 
 
 bool UNetworkGameInstance::JoinASession(int32 LocalUserNum, FName SessionName, const FOnlineSessionSearchResult& SearchResult) {
+
 	// Return bool
 	bool bSuccessful = false;
 	// Get OnlineSubsystem we want to work with
@@ -349,7 +372,11 @@ bool UNetworkGameInstance::JoinASession(int32 LocalUserNum, FName SessionName, c
 
 
 void UNetworkGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result) {
-	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnJoinSessionComplete %s, %d"), *SessionName.ToString(), static_cast<int32>(Result)));
+
+	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnJoinSessionComplete %s, %d"), *SessionName.ToString(), static_cast<int32>(Result)));
+
+	// TRACKED PROBLEM TO HERE SO FAR!
+	
 	// Get the OnlineSubsystem we want to work with
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
@@ -375,6 +402,8 @@ void UNetworkGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessi
 			}
 		}
 	}
+
+	
 }
 
 
