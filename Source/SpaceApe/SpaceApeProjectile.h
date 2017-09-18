@@ -44,6 +44,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Delegate")
 		FOnEnemyHit OnEnemyHit;
 
+
+
+
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		float ProjectileDamage = 10.f;

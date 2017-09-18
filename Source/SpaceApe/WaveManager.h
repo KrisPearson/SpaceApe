@@ -128,6 +128,7 @@ class  UWaveManager : public UObject
 
 	UWaveManager();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UWorld* World;
 
@@ -184,6 +185,7 @@ private:
 
 	void PopulateSpawnLocationsArray(TArray<FSpawnLocation>& _ArrayToPopulate);
 
+	UPROPERTY(Category = Character, VisibleDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Replicated)
 	class UTextRenderComponent* WaveTextRenderer;
 
 	UFUNCTION(BlueprintCallable, Category = Misc, meta = (WorldContext = WorldContextObject))

@@ -12,6 +12,12 @@ UWaveManager::UWaveManager() {
 
 }
 
+void UWaveManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UWaveManager, WaveTextRenderer);
+}
+
 
 void UWaveManager::WaveManagerInitialisation() {
 	if (GetOuter()) World = GEngine->GetWorldFromContextObject(GetOuter());
@@ -132,10 +138,6 @@ void UWaveManager::InitialiseEnemyList() {
 		}
 	}
 
-
-
-
-
 	StartWave();
 }
 
@@ -144,6 +146,10 @@ void UWaveManager::InitialiseWaveText() {
 		FVector(0, 0, 250),
 		FRotator(90, 0, 180)
 		);
+
+
+	WaveText->SetReplicates(true);
+	
 
 	WaveTextRenderer = WaveText->GetTextRender();
 

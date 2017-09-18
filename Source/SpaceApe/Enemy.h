@@ -18,6 +18,8 @@ class SPACEAPE_API AEnemy : public APawn
 
 	virtual void BeginPlay() override;
 
+	UWorld* World;
+
 public:
 	// Sets default values for this pawn's properties
 	AEnemy();
@@ -50,7 +52,6 @@ public:
 		float MaxSpeed = 500;
 
 
-
 		// The Value awarded to the player upon death
 	UPROPERTY(EditAnywhere, Category = Stats, meta = (ClampMin = "0", ClampMax = "9999", UIMin = "0", UIMax = "9999"))
 		int ScoreValue = 100;
@@ -66,8 +67,22 @@ public:
 	UPROPERTY(EditAnywhere, Category = Behaviour)
 		class UBehaviorTree* BotBehavior;
 
+
+
+
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+
 	UFUNCTION()
-		virtual bool ReceiveDamage(int DamageAmount);
+		virtual bool ReceiveDamage(int _DamageAmount);
+	UFUNCTION(Server, Reliable, WithValidation)
+		void ServerReceiveDamage(int _DamageAmount);
+	virtual void ServerReceiveDamage_Implementation(int _DamageAmount);
+	virtual bool ServerReceiveDamage_Validate(int _DamageAmount);
+
+	
+	
+
 
 	UFUNCTION()
 		void EnemyDeath();
@@ -91,7 +106,14 @@ public:
 
 protected:
 
+	UPROPERTY(ReplicatedUsing = OnRep_Damaged)
+		int CurrentHealthPoints;
 
+	UFUNCTION()
+		virtual void OnRep_Damaged();
+
+	UFUNCTION()
+		void PlayDamageFlash();
 
 
 private:

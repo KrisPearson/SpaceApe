@@ -4,6 +4,7 @@
 #include "Enemy_AIController.h"
 #include "Components/StaticMeshComponent.h"
 #include "Runtime/Engine/Classes/Materials/MaterialInstance.h"
+#include "Net/UnrealNetwork.h"
 #include "BehaviorTree/BehaviorTree.h"
 
 
@@ -22,8 +23,9 @@ AEnemy::AEnemy()  {
 
 	FloatingMovementComponent->MaxSpeed = MaxSpeed;
 
+	bReplicates = true;
+
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
 
 
 
@@ -47,43 +49,112 @@ AEnemy::AEnemy()  {
 	
 }
 
+void AEnemy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AEnemy, CurrentHealthPoints);
+}
+
 void AEnemy::BeginPlay() {
 		Super::BeginPlay();
 
+		World = GetWorld();
+
+		CurrentHealthPoints = HealthPoints;
 
 		if (BaseMat != nullptr) {
 			DynamicEnemyMaterial = UMaterialInstanceDynamic::Create(BaseMat, this);
 			EnemyMesh->SetMaterial(0, DynamicEnemyMaterial);			
+
 		}
+
+
 }
 
+bool AEnemy::ReceiveDamage(int _DamageAmount) {
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ReceiveDamage Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	//DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
 
-bool AEnemy::ReceiveDamage(int DamageAmount) {
-	HealthPoints -= DamageAmount;
 
-	if (!CheckIfAlive()) {
-		EnemyDeath();
-		return true;
+
+	if (Role < ROLE_Authority)
+	{
+		ServerReceiveDamage(_DamageAmount);
 	}
-	else if (DynamicEnemyMaterial) {
-		DynamicEnemyMaterial->SetScalarParameterValue(FName("DamageFlashScaler"), 0.5f);
-		GetWorld()->GetTimerManager().SetTimer(DamageFlashTimerHandle, this, &AEnemy::DisableMaterialFlash, 0.2f, false);
+	else {
+		CurrentHealthPoints -= _DamageAmount;
+		if (!CheckIfAlive())
+		{
+			EnemyDeath();
+			return true;
+		}
+		else PlayDamageFlash();
 
-		return false;
 	}
 
 	return false;
-
 }
+
+void AEnemy::ServerReceiveDamage_Implementation(int _DamageAmount) {
+	ReceiveDamage(_DamageAmount);
+}
+
+bool AEnemy::ServerReceiveDamage_Validate(int _DamageAmount) {
+	return true;
+}
+
+void AEnemy::OnRep_Damaged() {
+	PlayDamageFlash();
+}
+
+
+void AEnemy::PlayDamageFlash() {
+	if (DynamicEnemyMaterial != nullptr) {
+		if (World != nullptr) {
+			DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
+		}
+		else UE_LOG(LogTemp, Warning, TEXT(" Warning: World = Null"));
+	}
+	else  UE_LOG(LogTemp, Warning, TEXT(" Warning: DynamicEnemyMaterial = Null"));
+}
+
+
+
+//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" PlayDamageFlash_Implementation Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+
+
+
+
+
+/*
+void AEnemy::DamageFlash() {
+
+
+
+	//DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
+
+	//DynamicEnemyMaterial->SetScalarParameterValue(FName("DamageFlashScaler"), 0.5f); // ask material to flicker here
+}
+
+void AEnemy::DamageFlash_Implementation() {
+	DamageFlash();
+}
+
+bool AEnemy::DamageFlash_Validate() {
+	return true;
+}
+*/
+
+
+
 
 void AEnemy::DisableMaterialFlash() {
 	DynamicEnemyMaterial->SetScalarParameterValue(FName("DamageFlashScaler"), 0.f);
 }
 
 
-
 bool AEnemy::CheckIfAlive() {
-	if (HealthPoints > 0) {
+	if (CurrentHealthPoints > 0) {
 		return true;
 	}
 	else return false;
