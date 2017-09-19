@@ -145,6 +145,8 @@ class  UWaveManager : public UObject
 	int CurrentWaveCount;
 
 	int WaveTextStringIndex = 0;
+
+	UPROPERTY(Replicated)
 	FString WaveTextString;
 
 
@@ -185,8 +187,11 @@ private:
 
 	void PopulateSpawnLocationsArray(TArray<FSpawnLocation>& _ArrayToPopulate);
 
-	UPROPERTY(Category = Character, VisibleDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Replicated)
-	class UTextRenderComponent* WaveTextRenderer;
+	//UPROPERTY(Category = Character, VisibleDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Replicated)
+	//class UTextRenderComponent * WaveTextRenderer;
+
+	class AWaveTextRenderActor* WaveTextActor;
+	class UTextRenderComponent* WaveTextActorRenderer;
 
 	UFUNCTION(BlueprintCallable, Category = Misc, meta = (WorldContext = WorldContextObject))
 		static bool GetWorldFromContextObject(UObject * WorldContextObject);
@@ -197,12 +202,22 @@ private:
 	UFUNCTION(BlueprintCallable)
 		void InitialiseEnemyList();
 
+
+	UFUNCTION()
 		void InitialiseWaveText();
+
+	UFUNCTION(NetMulticast, Reliable)
+		void MulticastInitialiseWaveText();
+		virtual void MulticastInitialiseWaveText_Implementation();
 
 	//UFUNCTION()
 	//	bool PerformWaveAction(struct FWaveSpawnAction& _WaveAction);
 
 	void WaveTextTimerFunc();
+
+	UFUNCTION(NetMulticast, Reliable)
+		void MulticastWaveTextFunc();
+	virtual void MulticastWaveTextFunc_Implementation();
 
 	UFUNCTION()
 		FSpawnLocation GenerateSpawnPointData();

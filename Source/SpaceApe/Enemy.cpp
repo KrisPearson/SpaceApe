@@ -75,8 +75,6 @@ bool AEnemy::ReceiveDamage(int _DamageAmount) {
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ReceiveDamage Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
 	//DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
 
-
-
 	if (Role < ROLE_Authority)
 	{
 		ServerReceiveDamage(_DamageAmount);

@@ -5,7 +5,9 @@
 #include "SpawnZone.h"
 #include "Runtime/AssetRegistry/Public/AssetRegistryModule.h"
 #include "Runtime/AssetRegistry/Public/ARFilter.h"
-#include "Runtime/Engine/Classes/Engine/TextRenderActor.h"
+//#include "Runtime/Engine/Classes/Engine/TextRenderActor.h"
+#include "GameModeClasses/WaveTextRenderActor.h"
+#include "EngineUtils.h"
 #include "Enemy.h"
 
 UWaveManager::UWaveManager() {
@@ -15,16 +17,17 @@ UWaveManager::UWaveManager() {
 void UWaveManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UWaveManager, WaveTextRenderer);
+	//DOREPLIFETIME(UWaveManager, WaveTextRenderer);
+	DOREPLIFETIME(UWaveManager, WaveTextString);
 }
 
 
 void UWaveManager::WaveManagerInitialisation() {
 	if (GetOuter()) World = GEngine->GetWorldFromContextObject(GetOuter());
 	else UE_LOG(LogTemp, Warning, TEXT("Outer null"));
+	InitialiseWaveText();
 	PopulateSpawnLocationsArray(AllSpawnLocationsArray);
 	InitialiseEnemyList();
-	InitialiseWaveText();
 
 }
 
@@ -142,6 +145,63 @@ void UWaveManager::InitialiseEnemyList() {
 }
 
 void UWaveManager::InitialiseWaveText() {
+
+	/*
+	for (TActorIterator<ATextRenderActor> ActorItr(World); ActorItr; ++ActorItr)
+	{
+		// Same as with the Object Iterator, access the subclass instance with the * or -> operators.
+		ATextRenderActor *Text = *ActorItr;
+		UE_LOG(LogTemp, Warning, TEXT("Potential WaveText found"));
+
+		if (ActorItr->GetName().Contains(FString("WaveText_BP"))) {
+			WaveTextRenderer = Text->GetTextRender();
+			//WaveTextRenderer->SetVisibility(false);
+			UE_LOG(LogTemp, Warning, TEXT("WaveText_BP assigned"));
+		}
+
+		//ClientMessage(ActorItr->GetName());
+		//ClientMessage(ActorItr->GetActorLocation().ToString());
+	}
+
+	*/
+
+	/*
+	TArray<AActor*> OutActors;
+	TSubclassOf<ATextRenderActor> MyClass = ATextRenderActor::StaticClass();
+
+	UGameplayStatics::GetAllActorsOfClass(GetOuter(), MyClass, OutActors);
+
+	//UE_LOG(LogTemp, Warning, TEXT("Wavetext actors found = %d"), OutActors.Num());
+
+	for (int i = 0; i < OutActors.Num(); i++) {
+
+
+		if (OutActors[i]->GetName() == "WaveText_BP") {
+
+			UE_LOG(LogTemp, Warning, TEXT("WaveText_BP  = %d"));
+
+
+			WaveTextRenderer = Cast<ATextRenderActor>(OutActors[i])->GetTextRender();
+			if (WaveTextRenderer != nullptr) {
+				UE_LOG(LogTemp, Warning, TEXT("WaveText_BP assigned"));
+				WaveTextRenderer->SetVisibility(false);
+			}
+		}
+	}
+	*/
+
+	WaveTextActor = World->SpawnActor<AWaveTextRenderActor>(AWaveTextRenderActor::StaticClass(),
+		FVector(0, 0, 250),
+		FRotator(90, 0, 180)
+		);
+
+	WaveTextActor->SetReplicates(true);
+
+	WaveTextActorRenderer = WaveTextActor->GetTextRender();
+	//WaveTextActorRenderer->SetIsReplicated(true);
+
+	/*
+
 	ATextRenderActor* WaveText = World->SpawnActor<ATextRenderActor>(ATextRenderActor::StaticClass(),
 		FVector(0, 0, 250),
 		FRotator(90, 0, 180)
@@ -149,19 +209,23 @@ void UWaveManager::InitialiseWaveText() {
 
 
 	WaveText->SetReplicates(true);
-	
+
 
 	WaveTextRenderer = WaveText->GetTextRender();
 
+	WaveTextRenderer->SetIsReplicated(true);
 	// static ConstructorHelpers::FObjectFinder<UFont>HUDFontOb(TEXT("/Game/Fonts/ImpactFontText_Offline"));
 	//WaveText->GetTextRender()->SetFont(WaveFont.Object);
+
 	WaveTextRenderer->WorldSize = 400;
 	WaveTextRenderer->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
 	WaveTextRenderer->SetVerticalAlignment(EVerticalTextAligment::EVRTA_TextCenter);
 	WaveTextRenderer->SetVisibility(false);
 
 	WaveTextRenderer->SetNetAddressable();
-	WaveTextRenderer->SetIsReplicated(true);
+
+	*/
+
 }
 
 void UWaveManager::StartWave() {
@@ -172,6 +236,11 @@ void UWaveManager::StartWave() {
 	GenerateWave();
 	DisplayWaveIncomingMessage();
 	StartActionTimer();
+}
+
+void UWaveManager::MulticastInitialiseWaveText_Implementation() {
+	UE_LOG(LogTemp, Warning, TEXT("MulticastInitialiseWaveText_Implementation Called"));
+	InitialiseWaveText();
 }
 
 void UWaveManager::StartActionTimer() {
@@ -228,32 +297,47 @@ void UWaveManager::RegisterEnemyDeath(AEnemy* _deadEnemyRef) {
 	}
 }
 
-void UWaveManager::DisplayWaveIncomingMessage() {
+void UWaveManager::DisplayWaveIncomingMessage() { //<<<<<<<<<<<<Needs a multicast? (or do the func after the timer)
 
 
-	FString LeadingZeros;
-	if (CurrentWaveCount < 10) LeadingZeros = "00";
-	else if (CurrentWaveCount < 100)LeadingZeros = "0";
-	else LeadingZeros = "";
-	WaveTextString = FString("LEVEL"  + LeadingZeros + FString::FromInt(CurrentWaveCount));
+	if (WaveTextActorRenderer != nullptr) {
+		FString LeadingZeros;
+		if (CurrentWaveCount < 10) LeadingZeros = "00";
+		else if (CurrentWaveCount < 100)LeadingZeros = "0";
+		else LeadingZeros = "";
+		WaveTextString = FString("LEVEL" + LeadingZeros + FString::FromInt(CurrentWaveCount));
 
-	//CurrentWaveCount
-	//display the wave incoming message
-	//add a character each time
+		//CurrentWaveCount
+		//display the wave incoming message
+		//add a character each time
 
-	World->GetTimerManager().SetTimer(WaveTextTimerHandle, this, &UWaveManager::WaveTextTimerFunc, 0.1f, true);
+		World->GetTimerManager().SetTimer(WaveTextTimerHandle, this, &UWaveManager::WaveTextTimerFunc, 0.1f, true);
 
+	}
 }
 
-void UWaveManager::WaveTextTimerFunc() {
 
-	FString DisplayText = WaveTextString.Mid(0, WaveTextStringIndex);
+void UWaveManager::WaveTextTimerFunc() {
+	//UE_LOG(LogTemp, Warning, TEXT("DisplayWaveIncomingMessage Called"));
+
+	// may just need to replicate DisplayMessage
+
+	const FString DisplayText = WaveTextString.Mid(0, WaveTextStringIndex);
 
 	// use index to cound the characters in wavetext
 //	DisplayText = WaveTextString.substring(0, WaveTextStringIndex);
 
-	WaveTextRenderer->SetVisibility(true);
-	WaveTextRenderer->SetText( FText::AsCultureInvariant(DisplayText) );
+	//WaveTextRenderer->SetVisibility(true);
+	//WaveTextRenderer->SetText( FText::AsCultureInvariant(DisplayText) );
+
+	WaveTextActor->DisplayText = FText::AsCultureInvariant(DisplayText);
+
+	WaveTextActorRenderer->SetVisibility(true);
+
+
+	//multicast event
+	MulticastWaveTextFunc();
+
 
 	WaveTextStringIndex++;
 
@@ -261,10 +345,25 @@ void UWaveManager::WaveTextTimerFunc() {
 		World->GetTimerManager().SetTimer(WaveTextTimerHandle, this, &UWaveManager::WaveTextTimerFunc, 1.f, false);
 	}
 	if (WaveTextStringIndex == 10) {
-		WaveTextRenderer->SetVisibility(false);
+		//WaveTextRenderer->SetVisibility(false);
+		WaveTextActorRenderer->SetVisibility(false);
 		WaveTextStringIndex = 0;
 	}
 }
+
+void UWaveManager::MulticastWaveTextFunc_Implementation() {
+
+	UE_LOG(LogTemp, Warning, TEXT("MulticastWaveTextFunc_Implementation Called"));
+	if (WaveTextActorRenderer != nullptr) {
+		const FString DisplayText = WaveTextString.Mid(0, WaveTextStringIndex);
+
+
+		//WaveTextRenderer->SetText(FText::AsCultureInvariant(DisplayText));
+		WaveTextActorRenderer->SetText(FText::AsCultureInvariant(DisplayText));
+	}
+}
+
+
 
 
 FSpawnLocation UWaveManager::GenerateSpawnPointData() {
