@@ -59,8 +59,9 @@ public:
 
 	void HandleMovement(float deltaSeconds);
 
-	/* Fire a shot in the specified direction */
-	void FireShot(FVector FireDirection);
+
+	void HandleMovementAlt(float deltaSeconds);
+
 
 	/* Handler for the fire timer expiry */
 	void ShotTimerExpired();
@@ -107,13 +108,27 @@ public:
 	/** Returns CameraBoom subobject **/
 	//	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
+	void FireShot(FVector _FireDirection);
 
+	/*
+	Fires a shot in the specified direction
+	All projectiles are currently spawned on the server, and projectile movement handles replication
+	*/
 	UFUNCTION(Reliable, Server, WithValidation)
 		void ServerFire(FVector _FireDirection);
 	void ServerFire_Implementation(FVector _FireDirection);
 	bool ServerFire_Validate(FVector _FireDirection);
 
+	UFUNCTION()
+		void Fire(FVector _FireDirection);
 
+	UFUNCTION(NetMulticast, Reliable)
+		void MulticastPlayFireSound();
+	virtual void MulticastPlayFireSound_Implementation();
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	int PlayerStateIndex;
 
 	FORCEINLINE float GetCurrentScore() const { return CurrentScore; }
 	//FORCEINLINE void SpendGold(float Amount) { Amount > GoldCount ? GoldCount += 0.0f : GoldCount -= Amount; GoldCount = FMath::Clamp(GoldCount, 0.0f, 99999.0f); }

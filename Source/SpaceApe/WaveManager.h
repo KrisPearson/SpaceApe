@@ -138,7 +138,12 @@ class  UWaveManager : public UObject
 	TArray<FEnemyData*> EnemyDataArray;
 
 	FTimerHandle SpawnLoopTimerHandle;
-	FTimerHandle WaveTextTimerHandle;
+	FTimerHandle StartWaveTimerHandle;
+
+	void StartWaveTimer();
+
+	UFUNCTION()
+		void StartSpawning();
 
 	int CurrentWaveActionIndex = 0;
 
@@ -167,6 +172,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void WaveManagerInitialisation();
 
+	UFUNCTION(BlueprintCallable)
+		void StartWave();
+
+	//UFUNCTION()
+	//void StartWaveManager();
+
+
+
 private:
 
 
@@ -193,9 +206,6 @@ private:
 	class AWaveTextRenderActor* WaveTextActor;
 	class UTextRenderComponent* WaveTextActorRenderer;
 
-	UFUNCTION(BlueprintCallable, Category = Misc, meta = (WorldContext = WorldContextObject))
-		static bool GetWorldFromContextObject(UObject * WorldContextObject);
-
 
 
 
@@ -206,18 +216,7 @@ private:
 	UFUNCTION()
 		void InitialiseWaveText();
 
-	UFUNCTION(NetMulticast, Reliable)
-		void MulticastInitialiseWaveText();
-		virtual void MulticastInitialiseWaveText_Implementation();
 
-	//UFUNCTION()
-	//	bool PerformWaveAction(struct FWaveSpawnAction& _WaveAction);
-
-	void WaveTextTimerFunc();
-
-	UFUNCTION(NetMulticast, Reliable)
-		void MulticastWaveTextFunc();
-	virtual void MulticastWaveTextFunc_Implementation();
 
 	UFUNCTION()
 		FSpawnLocation GenerateSpawnPointData();
@@ -245,8 +244,7 @@ private:
 	UFUNCTION()
 		TSubclassOf<AEnemy> GenerateEnemy(int& _AvailablePointsToSpend);
 
-	UFUNCTION()
-		void StartWave();
+
 
 	UFUNCTION()
 		void StartActionTimer();

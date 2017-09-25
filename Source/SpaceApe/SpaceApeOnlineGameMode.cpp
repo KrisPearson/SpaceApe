@@ -6,6 +6,7 @@
 #include "SpaceApePawn.h"
 #include "Net/UnrealNetwork.h"
 #include "PlayerController_SpaceApe.h"
+#include "WaveManager.h"
 #include "EngineUtils.h"
 
 ASpaceApeOnlineGameMode::ASpaceApeOnlineGameMode() {
@@ -36,10 +37,24 @@ ASpaceApeOnlineGameMode::ASpaceApeOnlineGameMode() {
 }
 
 
+
+
 void ASpaceApeOnlineGameMode::BeginPlay() {
 	Super::BeginPlay();
+	PlayerControllers.Num();
 	  
+
+
 	ChangeMenuWidget(StartingWidgetClass);
+
+	//UE_LOG(LogTemp, Warning, TEXT("OnlineGameMode: BeginPlay Ran"));
+
+	//WaveManager = NewObject<UWaveManager>(this, UWaveManager::StaticClass(), TEXT("WaveManager") );
+	//WaveManager->WaveManagerInitialisation();
+	//WaveManager->StartWave(); // <<<<<<<<<<<<<<<<< need a timer on this
+	//WaveManager->StartWaveManager();
+
+	//GetWorld()->GetTimerManager().SetTimer(StartTimer, WaveManager, &UWaveManager::StartWave, 1.0f, false);
 }
 
 

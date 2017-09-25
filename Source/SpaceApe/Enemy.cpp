@@ -5,6 +5,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Runtime/Engine/Classes/Materials/MaterialInstance.h"
 #include "Net/UnrealNetwork.h"
+#include "Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 
 
@@ -13,15 +14,18 @@
 // Sets default values
 AEnemy::AEnemy()  {
 
-	RootComp = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	RootComponent = RootComp;
+	//RootComp = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	//RootComponent = RootComp;
 
-	FloatingMovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Floating Movement Component"));
+
+	//CharacterMovementComponent = CreateDefaultSubobject<UCharacterMovementComponent>(TEXT("Character Movement Component"));
+	//CharacterMovementComponent->MaxWalkSpeed = MaxSpeed;
+	//FloatingMovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Floating Movement Component"));
 
 	EnemyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Enemy Mesh"));
 	EnemyMesh->SetupAttachment(RootComponent);
 
-	FloatingMovementComponent->MaxSpeed = MaxSpeed;
+	//FloatingMovementComponent->MaxSpeed = MaxSpeed;
 
 	bReplicates = true;
 

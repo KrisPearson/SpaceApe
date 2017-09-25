@@ -3,8 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Pawn.h"
-#include "Runtime/Engine/Classes/GameFramework/FloatingPawnMovement.h"
+//#include "GameFramework/Pawn.h"
+#include "GameFramework/Character.h"
+//#include "Runtime/Engine/Classes/GameFramework/FloatingPawnMovement.h"
 #include "Enemy.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDeath, AEnemy*, EnemyPointer);
@@ -12,7 +13,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDeath, AEnemy*, EnemyPointer
 class AEnemy;
 
 UCLASS()
-class SPACEAPE_API AEnemy : public APawn
+class SPACEAPE_API AEnemy : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -39,8 +40,12 @@ public:
 	UPROPERTY(Category = Scene, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		USceneComponent* RootComp;
 
+	//UPROPERTY()
+	//UFloatingPawnMovement* FloatingMovementComponent;
+
 	UPROPERTY()
-	UFloatingPawnMovement* FloatingMovementComponent;
+		class UCharacterMovementComponent * CharacterMovementComponent;
+
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Mesh", meta = (AllowPrivateAccess = "true"))
 		UStaticMeshComponent* EnemyMesh;

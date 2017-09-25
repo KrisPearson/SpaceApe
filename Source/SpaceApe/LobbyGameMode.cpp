@@ -124,6 +124,7 @@ void ALobbyGameMode::PlayerRequestUpdate() {
 
 	//replaces the current widget on the viewport with a new widget
 void ALobbyGameMode::ChangeMenuWidget(TSubclassOf<UUserWidget> _NewWidgetClass) {
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ChangeMenuWidget. Is Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
 	if (CurrentWidget != nullptr) {
 		CurrentWidget->RemoveFromViewport();
 		CurrentWidget = nullptr;

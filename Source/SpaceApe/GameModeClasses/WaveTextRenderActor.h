@@ -14,9 +14,11 @@ class SPACEAPE_API AWaveTextRenderActor : public ATextRenderActor
 {
 	GENERATED_BODY()
 
+		FTimerHandle WaveTextTimerHandle;
+
 public:
 
-	UPROPERTY(ReplicatedUsing = OnRep_TextUpdated)
+	//UPROPERTY(ReplicatedUsing = OnRep_TextUpdated)
 		FText DisplayText;
 
 
@@ -24,11 +26,25 @@ public:
 
 	class UTextRenderComponent* WaveTextRenderComponent;
 
-	UFUNCTION()
-		virtual void OnRep_TextUpdated();
 
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	
+
+	void DisplayNextWaveMessage(int _WaveNumber);
+
+private:
+
+	FString WaveTextString;
+	int WaveTextStringIndex;
+
+
+	UFUNCTION(NetMulticast, Reliable)
+		void MulticastStartWaveTimer(int _WaveNumber);
+	virtual void MulticastStartWaveTimer_Implementation(int _WaveNumber);
+
+	void WaveTextTimerFunc();
+
+
 };

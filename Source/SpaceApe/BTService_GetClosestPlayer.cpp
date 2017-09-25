@@ -5,12 +5,15 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BlackBoard/BlackBoardKeyAllTypes.h"
-#include "SpaceApePawn.h"
+#include "SpaceApePlayerCharacter.h"
+#include "EngineUtils.h"
+
 #include "Runtime/CoreUObject/Public/UObject/UObjectIterator.h"
 
 //#include "AIEssentialsCharacter.h"
 
 #include "Engine/World.h"
+#include "Engine.h" 
 #include "Enemy_AIController.h"
 
 UBTService_GetClosestPlayer::UBTService_GetClosestPlayer() {
@@ -19,36 +22,21 @@ UBTService_GetClosestPlayer::UBTService_GetClosestPlayer() {
 
 void UBTService_GetClosestPlayer::TickNode(UBehaviorTreeComponent & OwnerComp, uint8 * NodeMemory, float DeltaSeconds) {
 
-
-	//this is a likely cause of lag spikes. Needs investigation.
-	//possible cause of lag on colission with player = enemy searches for target repeatedly. Not yet confirmed.
-
-	
-
-	//better alternative = ask gamestate for closest player, sending this actor's position as param
-
-		/*
-
-		for (TObjectIterator<UClass> It; It; ++It)
-		{
-			if (It->IsChildOf(ASpaceApePawn::StaticClass()) && !It->HasAnyClassFlags(CLASS_Abstract))
-			{
-				//LocatedPlayers.Add(*It);
-				
-			}
-		}
-		*/
-
-
-		
 	if (AEnemy_AIController* EnemyController = Cast<AEnemy_AIController>(OwnerComp.GetOwner())) {
 
+		float distance = 99999;
+		APawn* returnPawn = nullptr;
 
-
-		APawn* PlayerPawn = Cast<APawn>(GetWorld()->GetFirstPlayerController()->GetPawn()); // <==should check for closest
-		if (PlayerPawn) {
-			OwnerComp.GetBlackboardComponent()->SetValue<UBlackboardKeyType_Object>(EnemyController->EnemyKeyID, PlayerPawn);
+		FVector enemyLoc = EnemyController->GetPawn()->GetActorLocation();
+	
+		for (TActorIterator<ASpaceApePlayerCharacter> ActorItr(GetWorld()); ActorItr; ++ActorItr) {
+			float newDistance = FVector::Dist(ActorItr->GetActorLocation(), enemyLoc);
+			if (newDistance < distance) {
+				distance = newDistance;
+				returnPawn = Cast<APawn>(*ActorItr);
+			}
 		}
+		if (returnPawn ) OwnerComp.GetBlackboardComponent()->SetValue<UBlackboardKeyType_Object>(EnemyController->EnemyKeyID, returnPawn);
 	}
 	
 }

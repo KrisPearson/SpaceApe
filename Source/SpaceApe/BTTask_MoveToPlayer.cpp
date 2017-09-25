@@ -14,7 +14,6 @@ EBTNodeResult::Type UBTTask_MoveToPlayer::ExecuteTask(UBehaviorTreeComponent & O
 
 	APawn* PlayerPawn = Cast<APawn>(OwnerComp.GetBlackboardComponent()->GetValue<UBlackboardKeyType_Object>(EnemyController->EnemyKeyID));
 	if (PlayerPawn) {
-
 		//EnemyController->MoveToActor(PlayerPawn, 5.f, true, true, true, 0, true);
 		EnemyController->MoveToLocation(PlayerPawn->GetActorLocation());
 		//GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Green, "I SEE THE PLAYER");

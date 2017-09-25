@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SpawnZone.h"
+#include "Net/UnrealNetwork.h"
 #include "Engine.h"
 
 
@@ -47,11 +48,23 @@ ASpawnZone::ASpawnZone()
 
 }
 
+void ASpawnZone::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ASpawnZone, bIsMeshDisplayed);
+
+}
+
 // Called when the game starts or when spawned
 void ASpawnZone::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnZoneMesh->SetVisibility(0);
+	bIsMeshDisplayed = false;
+}
+
+void ASpawnZone::RequestDisplayMesh() {
+	DisplayMesh();
 }
 
 void ASpawnZone::DisplayMesh() {
@@ -65,10 +78,12 @@ void ASpawnZone::HideMesh() {
 	SpawnZoneMesh->SetVisibility(0);
 }
 
-void ASpawnZone::RequestDisplayMesh() {
-	//if (!bIsMeshDisplayed) 
-		DisplayMesh();
+void ASpawnZone::OnRep_SetMeshVisibility() {
+	SpawnZoneMesh->SetVisibility(bIsMeshDisplayed);
 }
+
+
+
 
 // Called every frame
 void ASpawnZone::Tick(float DeltaTime)

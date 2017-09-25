@@ -51,6 +51,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = SpawnPoints, meta = (AllowPrivateAccess = "true"))
 		USceneComponent* SpawnH;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 
 private:
 
@@ -58,6 +60,8 @@ private:
 
 	FTimerHandle MeshDisplayTimer;
 
+
+	UPROPERTY(ReplicatedUsing = OnRep_SetMeshVisibility)
 	bool bIsMeshDisplayed = false;
 	
 
@@ -69,6 +73,21 @@ protected:
 	void DisplayMesh();
 
 	void HideMesh();
+
+	UFUNCTION()
+	void OnRep_SetMeshVisibility();
+
+
+/*
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDisplayMesh();
+		void MulticastDisplayMesh_Implementation();
+
+	UFUNCTION(NetMulticast, Reliable)
+		void MulticastHideMesh();
+		void MulticastHideMesh_Implementation();
+
+*/
 
 public:	
 

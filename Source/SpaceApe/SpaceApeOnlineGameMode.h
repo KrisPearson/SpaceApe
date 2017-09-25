@@ -65,6 +65,12 @@ public:
 	UPROPERTY()
 		UUserWidget* CurrentWidget;
 
+
+	class UWaveManager* WaveManager;
+
+	FTimerHandle StartTimer;
+
+
 protected:
 	virtual void BeginPlay() override;
 
