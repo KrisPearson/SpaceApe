@@ -12,6 +12,8 @@ AEnemy_AIController::AEnemy_AIController() {
 
 	BehaviorComp = CreateDefaultSubobject<UBehaviorTreeComponent>(TEXT("BehaviorComp"));
 
+
+	GetPathFollowingComponent()->SetStopMovementOnFinish(false);
 }
 
 void AEnemy_AIController::Possess(APawn * InPawn) {

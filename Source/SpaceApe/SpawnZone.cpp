@@ -17,10 +17,6 @@ ASpawnZone::ASpawnZone()
 
 	SpawnZoneMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
-
 	SpawnA = CreateDefaultSubobject<USceneComponent>(TEXT("Spawn Point A"));
 	SpawnB = CreateDefaultSubobject<USceneComponent>(TEXT("Spawn Point B"));
 	SpawnC = CreateDefaultSubobject<USceneComponent>(TEXT("Spawn Point C"));
@@ -39,8 +35,8 @@ ASpawnZone::ASpawnZone()
 	SpawnPoints.Add(SpawnG);
 	SpawnPoints.Add(SpawnH);
 
+	// Offset the spawn points, placing them behind the actor in a row.
 	FVector SpawnPointOffset = FVector(-900, -400, 0);
-
 	for (int i = 0; i < SpawnPoints.Num(); i++) {
 		SpawnPoints[i]->SetWorldLocation(SpawnPointOffset);
 		SpawnPointOffset = FVector(SpawnPointOffset.X -225, SpawnPointOffset.Y, SpawnPointOffset.Z);
@@ -82,18 +78,10 @@ void ASpawnZone::OnRep_SetMeshVisibility() {
 	SpawnZoneMesh->SetVisibility(bIsMeshDisplayed);
 }
 
-
-
-
-// Called every frame
-void ASpawnZone::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
+/*
+Returns the cartesian 
+*/
 FVector ASpawnZone::GetSpawnPointLocation(int _spawnPointIndex) {
-
 	return SpawnPoints[_spawnPointIndex]->GetComponentLocation();
 }
 

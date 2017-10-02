@@ -128,8 +128,8 @@ class  UWaveManager : public UObject
 
 	UWaveManager();
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	// UObjects don't have a reference to World by default, so this is assigned in 
+	// WaveManagerInitialisation by getting a reference from the owning class.
 	UWorld* World;
 
 	UPROPERTY()
@@ -140,19 +140,12 @@ class  UWaveManager : public UObject
 	FTimerHandle SpawnLoopTimerHandle;
 	FTimerHandle StartWaveTimerHandle;
 
-	void StartWaveTimer();
-
-	UFUNCTION()
-		void StartSpawning();
-
 	int CurrentWaveActionIndex = 0;
 
 	int CurrentWaveCount;
 
 	int WaveTextStringIndex = 0;
 
-	UPROPERTY(Replicated)
-	FString WaveTextString;
 
 
 public:
@@ -169,96 +162,98 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
 		AActor* TopSpawnZone;
 
-	UFUNCTION(BlueprintCallable)
-		void WaveManagerInitialisation();
-
-	UFUNCTION(BlueprintCallable)
-		void StartWave();
-
-	//UFUNCTION()
-	//void StartWaveManager();
-
-
 
 private:
+	// Keeps track of all remaining enemies. 
+	TArray<AEnemy*> AliveEnemyArray; // Could this approach be improved somewhat?
 
-
-	TArray<AEnemy*> AliveEnemyArray;
-
+	// The current wave to be spawned. Assigned on wave generation.
 	FWave* CurrentWave;
 
+	// Populated during initialisation, Spawn Locations in this array are used to identify the spawn vectors of enemies.
 	TArray<FSpawnLocation> AllSpawnLocationsArray;
-	TArray<int> SpawnPointsInUse;
+
+	// Used during wave generation to prevent multiple enemies spawning atop one another.
+	TArray<int> SpawnPointsInUse; // POSSIBLE BUG: Is this ever reset? Needs investogating
+
+	int NumberOfGeneratedWaveActions; // This variable is not currently in use. Possible Intended uses include: Limiting enemy numbers, Affecting delay values,
+
+	// Dictates whether a wave action will be forced to delay spawning
 	bool ForceDelay = false;
 
-	int NumberOfGeneratedWaveActions;
+	// Used when generating delay. If it reaches zero, then a delay will be forced. 
 	int DelayChanceBuffer;
 
+	// The spawn zone the wave generator will attempt to spawn in when making a wave action. 
+	// This will be set at random to another zone following failed attempts. 
 	ESpawnZone CurrentSpawnZone;
 
+	// Assigned when generating EnemyData; this will be used when generating waves to check whether there are enough points remaining to spawn the cheapest enemy.
 	int CheapestEnemyPointCost = 1000;
-
-	void PopulateSpawnLocationsArray(TArray<FSpawnLocation>& _ArrayToPopulate);
-
-	//UPROPERTY(Category = Character, VisibleDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Replicated)
-	//class UTextRenderComponent * WaveTextRenderer;
 
 	class AWaveTextRenderActor* WaveTextActor;
 	class UTextRenderComponent* WaveTextActorRenderer;
 
-
-
+#pragma region Initialisation Functions
 
 	UFUNCTION(BlueprintCallable)
-		void InitialiseEnemyList();
+	void WaveManagerInitialisation();
+
+	void LocateSpawnZones();
+
+	void InitialiseEnemyList();
+
+	void InitialiseWaveText();
+
+	void PopulateSpawnLocationsArray(TArray<FSpawnLocation>& _ArrayToPopulate);
+
+#pragma endregion These methods are used to initialise variables and arrays for the class. WaveManagerInitialisation should be called by the owning class (GameMode) following instantiation.
 
 
-	UFUNCTION()
-		void InitialiseWaveText();
-
-
-
-	UFUNCTION()
-		FSpawnLocation GenerateSpawnPointData();
-
-	UFUNCTION()
-		void PerformWaveAction();
-
-	UFUNCTION()
-		void RegisterEnemyDeath(AEnemy* _deadEnemyRef);
-
-	UFUNCTION()
-		void DisplayWaveIncomingMessage();
-
+#pragma region Wave Generating Functions
 	UFUNCTION()
 		void GenerateWave();
 
-	UFUNCTION()
-		FVector GetSpawnPointFromWaveAction();
-
-	FVector FindSpawnPoint(FSpawnLocation _SpawnLoc);
-
-	UFUNCTION()
-		float GenerateDelayValue();
 
 	UFUNCTION()
 		TSubclassOf<AEnemy> GenerateEnemy(int& _AvailablePointsToSpend);
 
+	UFUNCTION()
+		FSpawnLocation GenerateSpawnPointData();
 
+
+	UFUNCTION()
+		float GenerateDelayValue();
+#pragma endregion These methods are associated with generating spawn data for a  wave.
+
+#pragma region Wave Loop Functions
+
+	UFUNCTION(BlueprintCallable)
+		void StartWave();
+
+	UFUNCTION()
+		void DisplayWaveIncomingMessage();
+
+	void StartWaveTimer();
 
 	UFUNCTION()
 		void StartActionTimer();
 
+	UFUNCTION()
+		void StartSpawning();
+
+	UFUNCTION()
+		void PerformWaveAction();
+
+	FVector FindSpawnPoint(FSpawnLocation _SpawnLoc);
+
 
 	void InformTargetZoneOfSpawn(ESpawnZone _TargetZone);
 
+	UFUNCTION()
+		void RegisterEnemyDeath(AEnemy* _deadEnemyRef);
 
-
-
-
-
-	UFUNCTION(BlueprintCallable) // DELETE ME AT A LATER DATE
-	void TestSpawn();
+#pragma endregion These methods are either involved with the spawning of or death of enemies, and the handling of wave information.
 
 
 };

@@ -9,36 +9,19 @@
 #include "BehaviorTree/BehaviorTree.h"
 
 
-
-
-// Sets default values
 AEnemy::AEnemy()  {
 
-	//RootComp = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	//RootComponent = RootComp;
-
-
-	//CharacterMovementComponent = CreateDefaultSubobject<UCharacterMovementComponent>(TEXT("Character Movement Component"));
-	//CharacterMovementComponent->MaxWalkSpeed = MaxSpeed;
-	//FloatingMovementComponent = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Floating Movement Component"));
-
-	EnemyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Enemy Mesh"));
+	EnemyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Enemy Mesh")); // this should be skeletal mesh. Alternatively, use the skeletal mesh provided by the CharacterMovementComponent
 	EnemyMesh->SetupAttachment(RootComponent);
 
-	//FloatingMovementComponent->MaxSpeed = MaxSpeed;
 
 	bReplicates = true;
-
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-
-
 
 //	AEnemy_AIController* Controller = new AEnemy_AIController();
 //	AIControllerClass = Controller;
 
 	/*  Causes fatal error on build
 	UObject* something;
-
 
 		something = StaticLoadObject(UObject::StaticClass(), nullptr, TEXT("/Game/AI/EnemyAI_BP"));
 		if (something != nullptr) {
@@ -53,6 +36,7 @@ AEnemy::AEnemy()  {
 	
 }
 
+
 void AEnemy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
@@ -60,21 +44,24 @@ void AEnemy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 }
 
 void AEnemy::BeginPlay() {
-		Super::BeginPlay();
+	Super::BeginPlay();
 
-		World = GetWorld();
+	World = GetWorld();
 
-		CurrentHealthPoints = HealthPoints;
+	// Set the health points the class uses during play to the value of the enemy type's default health points.
+	CurrentHealthPoints = HealthPoints;
 
-		if (BaseMat != nullptr) {
-			DynamicEnemyMaterial = UMaterialInstanceDynamic::Create(BaseMat, this);
-			EnemyMesh->SetMaterial(0, DynamicEnemyMaterial);			
-
-		}
-
-
+	//Create a dynamic material in order to enable access to the damage flicker scaler parameter.
+	if (BaseMat != nullptr) {
+		DynamicEnemyMaterial = UMaterialInstanceDynamic::Create(BaseMat, this);
+		EnemyMesh->SetMaterial(0, DynamicEnemyMaterial);
+	}
 }
 
+/*
+This is called by the attacking class following a successful attack.
+Returns a bool in order to inform the attacking class of the enemy's demise.
+*/
 bool AEnemy::ReceiveDamage(int _DamageAmount) {
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ReceiveDamage Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
 	//DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
@@ -90,8 +77,10 @@ bool AEnemy::ReceiveDamage(int _DamageAmount) {
 			EnemyDeath();
 			return true;
 		}
-		else PlayDamageFlash();
-
+		else {
+			//PlayDamageFlash();
+			MulticastPlayDamageFlash();
+		}
 	}
 
 	return false;
@@ -105,14 +94,16 @@ bool AEnemy::ServerReceiveDamage_Validate(int _DamageAmount) {
 	return true;
 }
 
-void AEnemy::OnRep_Damaged() {
-	PlayDamageFlash();
-}
 
-
-void AEnemy::PlayDamageFlash() {
+/*
+Tells the material to flicker, following the enemy recieving damage.
+Called on server, and runs on server and all clients.
+*/
+void AEnemy::MulticastPlayDamageFlash_Implementation() {
 	if (DynamicEnemyMaterial != nullptr) {
 		if (World != nullptr) {
+			// Send the current time to the material, which will then handle the duration of the flicker.
+			// This approach means that the material's scaler value only needs to be set once, rather than updated by the AEnemy class each frame, or via Timer.
 			DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
 		}
 		else UE_LOG(LogTemp, Warning, TEXT(" Warning: World = Null"));
@@ -120,41 +111,9 @@ void AEnemy::PlayDamageFlash() {
 	else  UE_LOG(LogTemp, Warning, TEXT(" Warning: DynamicEnemyMaterial = Null"));
 }
 
-
-
-//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" PlayDamageFlash_Implementation Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
-
-
-
-
-
 /*
-void AEnemy::DamageFlash() {
-
-
-
-	//DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
-
-	//DynamicEnemyMaterial->SetScalarParameterValue(FName("DamageFlashScaler"), 0.5f); // ask material to flicker here
-}
-
-void AEnemy::DamageFlash_Implementation() {
-	DamageFlash();
-}
-
-bool AEnemy::DamageFlash_Validate() {
-	return true;
-}
+A check to see whether the enemy has health points remianing.
 */
-
-
-
-
-void AEnemy::DisableMaterialFlash() {
-	DynamicEnemyMaterial->SetScalarParameterValue(FName("DamageFlashScaler"), 0.f);
-}
-
-
 bool AEnemy::CheckIfAlive() {
 	if (CurrentHealthPoints > 0) {
 		return true;
@@ -162,16 +121,12 @@ bool AEnemy::CheckIfAlive() {
 	else return false;
 }
 
+/*
+Destroy this actor following a broadcast to the WaveManager.
+*/
 void AEnemy::EnemyDeath() {
 	EnemyDeathDelegate.Broadcast(this);
 	Destroy();
-}
-
-// Called every frame
-void AEnemy::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }
 
 int AEnemy::GetScoreValue() {
@@ -187,3 +142,107 @@ int AEnemy::GetSpawnCost() {
 }
 
 
+/*
+void AEnemy::DamageFlash() {
+
+	//DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
+
+	//DynamicEnemyMaterial->SetScalarParameterValue(FName("DamageFlashScaler"), 0.5f); // ask material to flicker here
+}
+
+void AEnemy::DamageFlash_Implementation() {
+	DamageFlash();
+}
+
+bool AEnemy::DamageFlash_Validate() {
+	return true;
+}
+*/
+
+/* DEPRECATED - PART OF OLD APPROACH TO FLICKER
+void AEnemy::DisableMaterialFlash() { 
+	DynamicEnemyMaterial->SetScalarParameterValue(FName("DamageFlashScaler"), 0.f);
+}
+*/
+
+//void AEnemy::OnRep_Damaged() { // DEPRECATED
+//	PlayDamageFlash();
+//}
+
+/* DEPRECATED
+void AEnemy::PlayDamageFlash() {
+if (DynamicEnemyMaterial != nullptr) {
+if (World != nullptr) {
+// Send the current time to the material, which will then handle the duration of the flicker.
+// This approach means that the material's scaler value only needs to be set once, rather than updated by the AEnemy class each frame, or via Timer.
+DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
+}
+else UE_LOG(LogTemp, Warning, TEXT(" Warning: World = Null"));
+}
+else  UE_LOG(LogTemp, Warning, TEXT(" Warning: DynamicEnemyMaterial = Null"));
+}
+*/
+
+/*
+Method for checking whether an enemy's intended move direction is within the playable map bounds
+using line plane intersection.
+*/
+bool AEnemy::CheckIfDirectionIntersects(FVector2D _StartPoint, FVector2D _EndPoint, FVector2D _RectMin, FVector2D _RectMax) {
+	// Find min and max X for the segment
+	double minX = _StartPoint.X;
+	double maxX = _EndPoint.X;
+
+	if (_StartPoint.X > _EndPoint.X) {
+		minX = _EndPoint.X;
+		maxX = _StartPoint.X;
+	}
+
+	// Find the intersection of the segment's and rectangle's x-projections
+	if (maxX > _RectMax.X) {
+		maxX = _RectMax.X;
+	}
+
+	if (minX < _RectMin.X) {
+		minX = _RectMin.X;
+	}
+
+	// If their projections do not intersect return false
+	if (minX > maxX) {
+		return false;
+	}
+
+	// Find corresponding min and max Y for min and max X we found before
+	double minY = _StartPoint.Y;
+	double maxY = _EndPoint.Y;
+
+	double dx = _EndPoint.X - _StartPoint.X;
+
+	if (FMath::Abs(dx) > 0.0000001) {
+		double a = (_EndPoint.Y - _StartPoint.Y) / dx;
+		double b = _StartPoint.Y - a*_StartPoint.X;
+		minY = a*minX + b;
+		maxY = a*maxX + b;
+	}
+
+	if (minY > maxY) {
+		double tmp = maxY;
+		maxY = minY;
+		minY = tmp;
+	}
+
+	// Find the intersection of the segment's and rectangle's y-projections
+	if (maxY > _RectMax.Y) {
+		maxY = _RectMax.Y;
+	}
+
+	if (minY < _RectMin.Y) {
+		minY = _RectMin.Y;
+	}
+
+	// If Y-projections do not intersect return false
+	if (minY > maxY) {
+		return false;
+	}
+
+	return true;
+}

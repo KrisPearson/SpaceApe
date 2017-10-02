@@ -59,10 +59,6 @@ public:
 
 	void HandleMovement(float deltaSeconds);
 
-
-	void HandleMovementAlt(float deltaSeconds);
-
-
 	/* Handler for the fire timer expiry */
 	void ShotTimerExpired();
 

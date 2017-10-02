@@ -20,6 +20,8 @@ const FName ASpaceApePawn::MoveRightBinding("MoveRight");
 const FName ASpaceApePawn::FireForwardBinding("FireForward");
 const FName ASpaceApePawn::FireRightBinding("FireRight");
 
+//THIS CLASS IS DEPRECATED
+
 ASpaceApePawn::ASpaceApePawn()
 {	
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ShipMesh(TEXT("/Game/TwinStick/Meshes/TwinStickUFO.TwinStickUFO"));

@@ -25,7 +25,8 @@ public:
 	// Sets default values for this pawn's properties
 	AEnemy();
 
-
+	UFUNCTION(BlueprintCallable, Category = "Custom BP Library", meta = (WorldContext = "WorldContextObject"))
+		static bool CheckIfDirectionIntersects(FVector2D _StartPoint, FVector2D _EndPoint, FVector2D _RectMin, FVector2D _RectMax);
 
 
 
@@ -92,8 +93,8 @@ public:
 	UFUNCTION()
 		void EnemyDeath();
 
-	UFUNCTION()
-		void DisableMaterialFlash();
+	//UFUNCTION()
+	//	void DisableMaterialFlash();
 
 	UFUNCTION()
 		int GetScoreValue();
@@ -111,20 +112,26 @@ public:
 
 protected:
 
-	UPROPERTY(ReplicatedUsing = OnRep_Damaged)
-		int CurrentHealthPoints;
+	UFUNCTION(NetMulticast, reliable)
+		void MulticastPlayDamageFlash();
+	void MulticastPlayDamageFlash_Implementation();
 
-	UFUNCTION()
-		virtual void OnRep_Damaged();
 
-	UFUNCTION()
-		void PlayDamageFlash();
+//	UFUNCTION()
+//		virtual void OnRep_Damaged();
+
+//	UFUNCTION()
+//		void PlayDamageFlash();
+
+
+
+
 
 
 private:
 
-
-
+	UPROPERTY(Replicated)
+		int CurrentHealthPoints;
 
 	bool CheckIfAlive();
 
