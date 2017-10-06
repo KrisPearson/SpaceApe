@@ -94,9 +94,6 @@ public:
 	UFUNCTION()
 		void RequestDisplayMesh();
 
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	FVector GetSpawnPointLocation(int _spawnPointIndex);
 
 	

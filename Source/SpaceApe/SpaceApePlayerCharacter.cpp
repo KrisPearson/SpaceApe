@@ -15,6 +15,7 @@
 #include "Enemy.h"
 #include "Sound/SoundBase.h"
 #include "Engine.h"
+#include "Components/PlayerWeaponComponent.h"
 #include "EngineUtils.h"
 
 const FName ASpaceApePlayerCharacter::MoveForwardBinding("MoveForward");
@@ -38,6 +39,11 @@ ASpaceApePlayerCharacter::ASpaceApePlayerCharacter() {
 
 	ShipMeshComponent->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);
 	ShipMeshComponent->SetStaticMesh(ShipMesh.Object);
+
+
+	//EquippedWeaponComponent = CreateDefaultSubobject<UPlayerWeaponComponent>(TEXT("WUP"));
+
+
 
 	// Cache our sound effect
 	//static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("/Game/TwinStick/Audio/TwinStickFire.TwinStickFire"));
@@ -73,6 +79,8 @@ void ASpaceApePlayerCharacter::BeginPlay() {
 
 	World = GetWorld();
 
+	//UPlayerWeaponComponent* NewWeapon = Cast<UPlayerWeaponComponent>(DefaultWeaponComponent);
+	ChangeWeapon(DefaultWeaponComponent);
 }
 
 
@@ -95,12 +103,19 @@ void ASpaceApePlayerCharacter::Tick(float DeltaSeconds) {
 	const float FireRightValue = GetInputAxisValue(FireRightBinding);
 	const FVector FireDirection = FVector(FireForwardValue, FireRightValue, 0.0f);
 
-	if (FireDirection.SizeSquared() > 0.0f) {
-		if (Role == ROLE_AutonomousProxy) {
-			ServerFire(FireDirection);
-		}
-		else if (Role == ROLE_Authority) {
-			Fire(FireDirection);
+
+	if (EquippedWeaponComponent != nullptr) {
+		if (FireDirection.SizeSquared() > 0.0f) {
+			if (Role == ROLE_AutonomousProxy) {
+				ServerFire(FireDirection);
+
+				EquippedWeaponComponent->Shoot(FireDirection);
+			}
+			else if (Role == ROLE_Authority) {
+				Fire(FireDirection);
+
+				EquippedWeaponComponent->Shoot(FireDirection);
+			}
 		}
 	}
 
@@ -257,7 +272,17 @@ void ASpaceApePlayerCharacter::MulticastPlayFireSound_Implementation() {
 		UGameplayStatics::PlaySound2D(this, FireSound);	
 		//UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 	}
-} 
+}
+
+/*
+This will be used primarily for weapon pickups.
+Replaces the current weapon witha  new one.
+Need to destroy old component and perhaps perform some kind of check.
+This method should eventually be made private/ protected, and some kind of public condition check method should handle weapon changes.
+*/
+void ASpaceApePlayerCharacter::ChangeWeapon(TSubclassOf<UPlayerWeaponComponent> _NewWeapon) {
+	EquippedWeaponComponent = ConstructObject<UPlayerWeaponComponent>(_NewWeapon, this, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
+}
 
 void ASpaceApePlayerCharacter::DealDamage(AActor* _Enemy) {
 

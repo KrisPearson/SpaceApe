@@ -68,6 +68,10 @@ public:
 	static const FName FireForwardBinding;
 	static const FName FireRightBinding;
 
+	// The default weapon, as assigned in the character blueprint.
+	UPROPERTY(Category = Gameplay, EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<class UPlayerWeaponComponent> DefaultWeaponComponent;
+
 
 private:
 
@@ -81,6 +85,11 @@ private:
 	int CurrentScore;
 
 	UWorld* World;
+
+	//TSubclassOf<class PlayerWeaponComponent>* EquippedWeaponComponent;
+
+	UPROPERTY()
+	class UPlayerWeaponComponent* EquippedWeaponComponent;
 
 
 protected:
@@ -126,9 +135,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	int PlayerStateIndex;
 
+
+	UFUNCTION()
+		void ChangeWeapon(TSubclassOf<class UPlayerWeaponComponent> _NewWeapon);
+
+
+
 	FORCEINLINE float GetCurrentScore() const { return CurrentScore; }
 	//FORCEINLINE void SpendGold(float Amount) { Amount > GoldCount ? GoldCount += 0.0f : GoldCount -= Amount; GoldCount = FMath::Clamp(GoldCount, 0.0f, 99999.0f); }
 	FORCEINLINE void AddToScore(int Amount) { CurrentScore += Amount; CurrentScore = FMath::Clamp(CurrentScore, 0, 99999999); }
-
-
 };
