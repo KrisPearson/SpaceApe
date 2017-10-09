@@ -18,5 +18,5 @@ class SPACEAPE_API ULaserPWComponent : public UPlayerWeaponComponent
 	void Shoot(FVector _FireDirection) override;
 	
 
-	void BeginPlay() override;
+	//void BeginPlay() override;
 };

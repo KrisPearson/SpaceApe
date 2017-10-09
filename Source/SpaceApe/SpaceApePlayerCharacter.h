@@ -92,6 +92,8 @@ private:
 	class UPlayerWeaponComponent* EquippedWeaponComponent;
 
 
+
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -101,11 +103,17 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		float PlayerProjectileDamage = 10.f;
 
-	UFUNCTION()
-	void DealDamage(AActor* _Enemy);
+	class UObjectPoolComponent* ProjectilePool;
 
 
 public:
+
+	UFUNCTION()
+		void CollectPickup(class ABasePickup* _PickupType);
+
+	UFUNCTION()
+		void DealDamage(AActor* _Enemy);
+
 	/** Returns ShipMeshComponent subobject **/
 	FORCEINLINE class UStaticMeshComponent* GetShipMeshComponent() const { return ShipMeshComponent; }
 	/** Returns CameraComponent subobject **/

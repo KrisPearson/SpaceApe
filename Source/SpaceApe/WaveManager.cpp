@@ -446,6 +446,9 @@ the method to be used as a single line in the FWaveAction constructor parameter.
 */
 TSubclassOf<AEnemy> UWaveManager::GenerateEnemy(int& _AvailablePointsToSpend) {
 
+
+	int points = _AvailablePointsToSpend;
+
 	double p = FMath::FRand(); // Generate a random number between 0 and 1.
 	double cumulativeProbability = 0.0;
 	for (FEnemyData* enemyData : EnemyDataArray) { // cucle through all of the enemy data

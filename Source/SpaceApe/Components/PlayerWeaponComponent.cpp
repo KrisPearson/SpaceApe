@@ -1,6 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "PlayerWeaponComponent.h"
+
+#include "Components/PlayerWeaponComponent.h"
+#include "Components/ObjectPoolComponent.h"
+#include "SpaceApePlayerCharacter.h"
 
 
 // Sets default values for this component's properties
@@ -10,19 +13,30 @@ UPlayerWeaponComponent::UPlayerWeaponComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
+
+	World = GetWorld();
+	OwningCharacter = Cast<ASpaceApePlayerCharacter>(GetOwner());
+
+
+	//ProjectileToSpawn = ASpaceApeProjectile();
 	// ...
 }
 
+
+void UPlayerWeaponComponent::SetObjectPoolReference(UObjectPoolComponent* _PoolRef) {
+	PlayerProjectilePoolRef = _PoolRef;
+}
 
 // Called when the game starts
 void UPlayerWeaponComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
-}
+	World = GetWorld();
+	OwningCharacter = Cast<ASpaceApePlayerCharacter>(GetOwner());
 
+	UE_LOG(LogTemp, Warning, TEXT("Base UPlayerWeaponComponent BeginPlay"));
+}
 
 // Called every frame
 void UPlayerWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -32,8 +46,48 @@ void UPlayerWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	// ...
 }
 
-void UPlayerWeaponComponent::Shoot(FVector _FireDirection) {
 
-	UE_LOG(LogTemp, Warning, TEXT("Base UPlayerWeaponComponent firing"));
+/*
+This overridable method gets projectiles from the character's object pool component and "spawns" them. 
+should be called by the server by an RPC when networking.
+*/
+void UPlayerWeaponComponent::Shoot(FVector _FireDirection) {
+	
+	const FRotator FireRotation = _FireDirection.Rotation();
+
+	FVector GunOffset = FVector(0.f, 0.f, -30.f);
+
+	const FVector SpawnLocation = GetOwner()->GetActorLocation() + FireRotation.RotateVector(GunOffset);
+
+	ASpaceApeProjectile* Projectile = Cast<ASpaceApeProjectile>( PlayerProjectilePoolRef->GetReusableReference() );
+
+	if (Projectile != nullptr) { 
+		//Projectile->ToggleEnabled(true); // moved to the projectile's multicast. If needed, then a bool param could be added to the multicast method.
+		Projectile->SetProjectileLocationAndDirection(SpawnLocation, _FireDirection, true);
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("Projectile is nullptr. Either cast failed, or no projectile was returned from the Object Pool."));
+	}
+
+
+//	for (int i = 0; i < PlayerProjectilePoolRef->Num(); i++) {
+//		&PlayerProjectilePoolRef[i]->
+//	}
+
+
+	//GetProjecectileandenable
+	//PlayerProjectilePoolRef
+
+	//ASpaceApeProjectile* NewProjectile = World->SpawnActor<ASpaceApeProjectile>(ProjectileToSpawn, SpawnLocation, FireRotation);
+	//ASpaceApeProjectile* NewProjectile = World->SpawnActor<ASpaceApeProjectile>(SpawnLocation, FireRotation);
+	//NewProjectile->OnEnemyHit.AddDynamic(Cast<ASpaceApePlayerCharacter>(OwningActor), &ASpaceApePlayerCharacter::DealDamage);
+
+}
+
+UObjectPoolComponent * UPlayerWeaponComponent::GetObjectPoolReference() {
+	if (PlayerProjectilePoolRef != nullptr) {
+		return PlayerProjectilePoolRef;
+	}
+	else return nullptr;
 }
 

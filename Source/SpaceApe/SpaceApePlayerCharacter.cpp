@@ -16,6 +16,8 @@
 #include "Sound/SoundBase.h"
 #include "Engine.h"
 #include "Components/PlayerWeaponComponent.h"
+#include "Pickups/BasePickup.h"
+#include "Components/ObjectPoolComponent.h"
 #include "EngineUtils.h"
 
 const FName ASpaceApePlayerCharacter::MoveForwardBinding("MoveForward");
@@ -42,6 +44,8 @@ ASpaceApePlayerCharacter::ASpaceApePlayerCharacter() {
 
 
 	//EquippedWeaponComponent = CreateDefaultSubobject<UPlayerWeaponComponent>(TEXT("WUP"));
+
+	ProjectilePool = CreateDefaultSubobject<UObjectPoolComponent>(TEXT("ProjectilePool"));
 
 
 
@@ -81,6 +85,33 @@ void ASpaceApePlayerCharacter::BeginPlay() {
 
 	//UPlayerWeaponComponent* NewWeapon = Cast<UPlayerWeaponComponent>(DefaultWeaponComponent);
 	ChangeWeapon(DefaultWeaponComponent);
+
+	if (Role == ROLE_Authority) {
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" FillPool Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+		ProjectilePool->FillPool(ASpaceApeProjectile::StaticClass(), 50);
+		if (EquippedWeaponComponent) { EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool); }
+
+		TArray<AActor*>* PoolArray = ProjectilePool->GetArrayPointer();
+		for (AActor* Actor : *PoolArray)
+		{
+			Cast<ASpaceApeProjectile>(Actor)->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
+			Cast<ASpaceApeProjectile>(Actor)->SetPoolReference(ProjectilePool);
+			//tell the projictile where to retunr to?
+		}
+
+	}
+
+	/*
+	else {
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" FillPool Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+		
+		//ProjectilePool->FillPool(ASpaceApeProjectile::StaticClass(), 5);
+		//if (EquippedWeaponComponent) { EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool); }
+	}
+
+	//ProjectilePool->FillPool(ASpaceApeProjectile::StaticClass(), 5);
+	//if (EquippedWeaponComponent) { EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool); }
+	*/
 }
 
 
@@ -108,13 +139,9 @@ void ASpaceApePlayerCharacter::Tick(float DeltaSeconds) {
 		if (FireDirection.SizeSquared() > 0.0f) {
 			if (Role == ROLE_AutonomousProxy) {
 				ServerFire(FireDirection);
-
-				EquippedWeaponComponent->Shoot(FireDirection);
 			}
 			else if (Role == ROLE_Authority) {
 				Fire(FireDirection);
-
-				EquippedWeaponComponent->Shoot(FireDirection);
 			}
 		}
 	}
@@ -223,12 +250,14 @@ void ASpaceApePlayerCharacter::ServerFire_Implementation(FVector _FireDirection)
 		const FVector SpawnLocation = GetActorLocation() + FireRotation.RotateVector(GunOffset);
 
 		if (World != NULL) {
-			ASpaceApeProjectile* NewProjectile = World->SpawnActor<ASpaceApeProjectile>(SpawnLocation, FireRotation);
+			//ASpaceApeProjectile* NewProjectile = World->SpawnActor<ASpaceApeProjectile>(SpawnLocation, FireRotation);
+			//NewProjectile->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
 
-			NewProjectile->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
+			EquippedWeaponComponent->Shoot(_FireDirection);
+
 
 			bCanFire = false;
-			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &ASpaceApePlayerCharacter::ShotTimerExpired, FireRate);
+			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &ASpaceApePlayerCharacter::ShotTimerExpired, EquippedWeaponComponent->WeaponFireRate);
 
 			if (FireSound != nullptr) {
 				MulticastPlayFireSound();
@@ -252,9 +281,10 @@ void ASpaceApePlayerCharacter::Fire(FVector _FireDirection) {
 
 		if (World != NULL) {
 			// spawn the projectile
-			ASpaceApeProjectile* NewProjectile = World->SpawnActor<ASpaceApeProjectile>(SpawnLocation, FireRotation);
+			//ASpaceApeProjectile* NewProjectile = World->SpawnActor<ASpaceApeProjectile>(SpawnLocation, FireRotation);
+			//NewProjectile->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
 
-			NewProjectile->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
+			EquippedWeaponComponent->Shoot(_FireDirection);
 
 			bCanFire = false;
 			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &ASpaceApePlayerCharacter::ShotTimerExpired, FireRate);
@@ -282,6 +312,11 @@ This method should eventually be made private/ protected, and some kind of publi
 */
 void ASpaceApePlayerCharacter::ChangeWeapon(TSubclassOf<UPlayerWeaponComponent> _NewWeapon) {
 	EquippedWeaponComponent = ConstructObject<UPlayerWeaponComponent>(_NewWeapon, this, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
+	//use newobject instead
+}
+
+void ASpaceApePlayerCharacter::CollectPickup(ABasePickup * _PickupType) {
+	UE_LOG(LogTemp, Warning, TEXT("CollectPickup called"));
 }
 
 void ASpaceApePlayerCharacter::DealDamage(AActor* _Enemy) {

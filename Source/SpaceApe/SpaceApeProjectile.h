@@ -17,11 +17,21 @@ class ASpaceApeProjectile : public AActor
 	GENERATED_BODY()
 
 
+		void BeginPlay() override;
+
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		float ProjectileDamage = 10.f;
+
+	// The move speed of the projectile. This is used in SetVelocityDirection to set the velocity 
+	float CurrentMoveSpeed = 1000;
 
 	/** Sphere collision component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* ProjectileMesh;
 
+	/** Projectile Particle System**/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"))
 	UParticleSystemComponent* ProjectileParticle;
 
@@ -34,7 +44,7 @@ public:
 
 	/** Function to handle the projectile hitting something */
 	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	/** Returns ProjectileMesh subobject **/
 	FORCEINLINE UStaticMeshComponent* GetProjectileMesh() const { return ProjectileMesh; }
@@ -45,13 +55,38 @@ public:
 		FOnEnemyHit OnEnemyHit;
 
 
+	void ToggleEnabled(bool _value);
 
+	void SetProjectileLocationAndDirection(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+
+	void SetPoolReference(class UObjectPoolComponent* _PoolRef) { OwningPool = _PoolRef; }
 
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		float ProjectileDamage = 10.f;
 
+	virtual void PostNetReceiveVelocity(const FVector& NewVelocity) override;
+
+	UFUNCTION(NetMulticast, Reliable)
+		void MulticastSetLocationAndVelocityDirection(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+	void MulticastSetLocationAndVelocityDirection_Implementation(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+
+
+	/*
+	UFUNCTION(Server, Reliable, WithValidation)
+		void ServerSetLocationAndVelocityDirection(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+	void ServerSetLocationAndVelocityDirection_Implementation(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+	bool ServerSetLocationAndVelocityDirection_Validate(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+	*/
+
+	void ResetProjectile();
+
+
+private:
+	class UObjectPoolComponent* OwningPool;
+
+	FTimerHandle ReturnToPoolTimer;
+
+	UWorld* World;
 
 };
 
