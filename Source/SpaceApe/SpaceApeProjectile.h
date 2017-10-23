@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+//#include "Components/PlayerWeaponComponent.h" // this had to be included here as UFUNCTION does not accept forward delcaration of structs
+#include "Structs/WeaponData.h"
 #include "SpaceApeProjectile.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyHit, AActor*, _Enemy);
@@ -21,10 +23,13 @@ class ASpaceApeProjectile : public AActor
 
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Replicated)
 		float ProjectileDamage = 10.f;
 
 	// The move speed of the projectile. This is used in SetVelocityDirection to set the velocity 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Replicated)
 	float CurrentMoveSpeed = 1000;
 
 	/** Sphere collision component */
@@ -32,7 +37,7 @@ protected:
 	UStaticMeshComponent* ProjectileMesh;
 
 	/** Projectile Particle System**/
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"), Replicated)
 	UParticleSystemComponent* ProjectileParticle;
 
 	/** Projectile movement component */
@@ -61,6 +66,15 @@ public:
 
 	void SetPoolReference(class UObjectPoolComponent* _PoolRef) { OwningPool = _PoolRef; }
 
+	void PassNewWeaponData(struct FWeaponData _NewWeaponData);
+
+	UFUNCTION(NetMulticast, Reliable)
+		void MulticastAssignNewWeaponData(FWeaponData _NewWeaponData);
+	void MulticastAssignNewWeaponData_Implementation(FWeaponData _NewWeaponData);
+
+
+	UParticleSystemComponent* GetParticleComponent() { return ProjectileParticle;}
+
 
 protected:
 
@@ -69,6 +83,12 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 		void MulticastSetLocationAndVelocityDirection(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
 	void MulticastSetLocationAndVelocityDirection_Implementation(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+
+
+
+	UFUNCTION(NetMulticast, Reliable)
+		void MulticastAssignWeaponDataValues(UParticleSystem* _NewParticleSystem,UStaticMesh* _NewMesh);
+	void MulticastAssignWeaponDataValues_Implementation(UParticleSystem* _NewParticleSystem, UStaticMesh* _NewMesh);
 
 
 	/*
@@ -81,12 +101,21 @@ protected:
 	void ResetProjectile();
 
 
+
+
+
+
 private:
 	class UObjectPoolComponent* OwningPool;
 
 	FTimerHandle ReturnToPoolTimer;
 
 	UWorld* World;
+
+
+	// Used to keep track of and destroy components
+	TArray<class UProjectileComponents* > ProjectileComponents;
+
 
 };
 

@@ -20,13 +20,49 @@ public:
 
 
 protected:
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	/** Audio feedback - for when you pick up an item - could replicate this sound but might not*/
+	UPROPERTY(EditAnywhere, Category = "C++ Base Class")
+		USoundBase* PickUpSound;
+
+	/** Visual feedback - for when you pick up an item - should replicate probably*/
+	UPROPERTY(EditAnywhere, Category = "C++ Base Class", Replicated)
+		UParticleSystem* PickUpEffect;
+
+	/** Volume of sound */
+	UPROPERTY(EditAnywhere, Category = "C++ Base Class")
+		float SoundVolume = 0.25f;
+
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
 
+
+	/* Overridable function to do something when overlapped*/
+	virtual void OnBeginOverlapAction(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+
+
+
+private:
+
+	UPROPERTY(VisibleDefaultsOnly, Category = "C++ Base Class")
+		USceneComponent* MyRoot;
+
+	/* The colission function that gets called on all derived classes. */
 	UFUNCTION()
-		virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
+		void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	
+	UFUNCTION()
+		void HandleOverlap();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+		void ServerHandleOverlap();
+
+	void PlayPickUpSound(const FVector& Location);
+
+	void PlayPickUpEffect(const FVector& Location);
 };

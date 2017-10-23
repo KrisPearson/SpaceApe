@@ -226,7 +226,7 @@ the defined type at the required location.
 */
 void UWaveManager::PerformWaveAction() {
 	UE_LOG(LogTemp, Warning, TEXT("PerformWaveAction."));
-	FWaveSpawnAction Action = CurrentWave->WaveActionsList[CurrentWaveActionIndex];
+	FWaveSpawnAction Action = CurrentWave->WaveActionsList[CurrentWaveActionIndex]; // occasional runtime error. Appears to be the wave ending prematurely, clearing the current wave before the spawn loop is complete
 
 	FVector Location = FindSpawnPoint(Action.SpawnLocationData);
 

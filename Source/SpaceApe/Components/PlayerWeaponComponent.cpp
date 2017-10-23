@@ -3,16 +3,31 @@
 
 #include "Components/PlayerWeaponComponent.h"
 #include "Components/ObjectPoolComponent.h"
+#include "Particles/ParticleSystem.h"
+#include "Components/PlayerWeaponComponent.h"
+#include "UObject/ConstructorHelpers.h"
 #include "SpaceApePlayerCharacter.h"
+
+
+/*
+The Player Weapon Component dictates:
+	> the Projectile type
+	> The Spawn pattern
+	> The rate of fire
+*/
+
 
 
 // Sets default values for this component's properties
 UPlayerWeaponComponent::UPlayerWeaponComponent()
 {
+
+
+	UE_LOG(LogTemp, Warning, TEXT(" UPlayerWeaponComponent Constructor"));
+
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
 
 	World = GetWorld();
 	OwningCharacter = Cast<ASpaceApePlayerCharacter>(GetOwner());
@@ -20,6 +35,26 @@ UPlayerWeaponComponent::UPlayerWeaponComponent()
 
 	//ProjectileToSpawn = ASpaceApeProjectile();
 	// ...
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(TEXT("/Game/TwinStick/Meshes/TwinStickProjectile.TwinStickProjectile"));
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("/Game/Particles/Blaster_Particle"));
+	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("/Game/TwinStick/Audio/KKIIDDZZ_00018"));
+
+
+
+	TArray<class UProjectileComponent*> ProjectileComponentArray;
+
+
+
+	WeaponData = FWeaponData(
+		ProjectileMeshAsset.Object,
+		ProjectileParticleAsset.Object,
+		FireAudio.Object,
+		ProjectileComponentArray,
+		0.5f,
+		32,
+		500
+	);
 }
 
 

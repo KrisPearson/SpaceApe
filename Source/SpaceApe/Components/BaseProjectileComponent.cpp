@@ -3,6 +3,17 @@
 #include "BaseProjectileComponent.h"
 
 
+/*
+The Projectile Component ( powerup? ) could:
+	> attach to weapon or projectile, depending on the type of powerup. Some kind of dictionary approach could be used here?
+	> bind to events such as on hit(projectile) or shoot(weaponcomponent).
+
+
+
+
+*/
+
+
 // Sets default values for this component's properties
 UBaseProjectileComponent::UBaseProjectileComponent()
 {

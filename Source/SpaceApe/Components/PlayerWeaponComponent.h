@@ -3,25 +3,46 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+//#include "Components/ActorComponent.h"
 #include "SpaceApeProjectile.h"
+#include "Structs/WeaponData.h"
 #include "PlayerWeaponComponent.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class SPACEAPE_API UPlayerWeaponComponent : public UActorComponent
+
+class UObjectPoolComponent;
+
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
+class SPACEAPE_API UPlayerWeaponComponent : public UActorComponent 
 {
 	GENERATED_BODY()
 
-public:	
+
+
+public:
 	// Sets default values for this component's properties
 	UPlayerWeaponComponent();
 
 	void SetObjectPoolReference(class UObjectPoolComponent* _PoolRef);
 
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	virtual void Shoot(FVector _FireDirection);
+
+	const float WeaponFireRate = 0.14f;
+
+	UObjectPoolComponent* GetObjectPoolReference();
+
+
+
+
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
+	FWeaponData WeaponData;
 
 	//class ASpaceApeProjectile ProjectileToSpawn;
 
@@ -33,23 +54,17 @@ protected:
 	UWorld* World;
 
 	// A reference to the character's projectile object pool
-	class UObjectPoolComponent* PlayerProjectilePoolRef;
+	UObjectPoolComponent* PlayerProjectilePoolRef;
 
 
+public:
+
+	float GetFireRate() { return WeaponData.WeaponFireRate; }
+
+	USoundBase* GetFireSound() { return WeaponData.FireSound;  }
 
 
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-	virtual void Shoot(FVector _FireDirection);
-
-	float WeaponFireRate = 0.14f;
-
-
-	UObjectPoolComponent* GetObjectPoolReference();
-
-
-
-	
+	FWeaponData GetWeaponData() { return WeaponData;  }
 };
+
+

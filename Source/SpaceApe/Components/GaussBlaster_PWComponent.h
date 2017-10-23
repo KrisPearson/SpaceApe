@@ -4,19 +4,20 @@
 
 #include "CoreMinimal.h"
 #include "Components/PlayerWeaponComponent.h"
-#include "LaserPWComponent.generated.h"
+#include "GaussBlaster_PWComponent.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SPACEAPE_API ULaserPWComponent : public UPlayerWeaponComponent
+class SPACEAPE_API UGaussBlaster_PWComponent : public UPlayerWeaponComponent
 {
 	GENERATED_BODY()
 
 
-	void Shoot(FVector _FireDirection) override;
-	
+		UGaussBlaster_PWComponent();
 
-	//void BeginPlay() override;
+
+	virtual void Shoot(FVector _FireDirection) override;
+	
 };

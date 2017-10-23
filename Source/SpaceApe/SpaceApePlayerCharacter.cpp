@@ -88,17 +88,14 @@ void ASpaceApePlayerCharacter::BeginPlay() {
 
 	if (Role == ROLE_Authority) {
 		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" FillPool Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
-		ProjectilePool->FillPool(ASpaceApeProjectile::StaticClass(), 50);
+		ProjectilePool->FillPool(ASpaceApeProjectile::StaticClass(), 60);
 		if (EquippedWeaponComponent) { EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool); }
 
 		TArray<AActor*>* PoolArray = ProjectilePool->GetArrayPointer();
-		for (AActor* Actor : *PoolArray)
-		{
+		for (AActor* Actor : *PoolArray){
 			Cast<ASpaceApeProjectile>(Actor)->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
 			Cast<ASpaceApeProjectile>(Actor)->SetPoolReference(ProjectilePool);
-			//tell the projictile where to retunr to?
 		}
-
 	}
 
 	/*
@@ -133,6 +130,10 @@ void ASpaceApePlayerCharacter::Tick(float DeltaSeconds) {
 	const float FireForwardValue = GetInputAxisValue(FireForwardBinding);
 	const float FireRightValue = GetInputAxisValue(FireRightBinding);
 	const FVector FireDirection = FVector(FireForwardValue, FireRightValue, 0.0f);
+
+
+
+
 
 
 	if (EquippedWeaponComponent != nullptr) {
@@ -257,7 +258,7 @@ void ASpaceApePlayerCharacter::ServerFire_Implementation(FVector _FireDirection)
 
 
 			bCanFire = false;
-			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &ASpaceApePlayerCharacter::ShotTimerExpired, EquippedWeaponComponent->WeaponFireRate);
+			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &ASpaceApePlayerCharacter::ShotTimerExpired, EquippedWeaponComponent->GetFireRate());
 
 			if (FireSound != nullptr) {
 				MulticastPlayFireSound();
@@ -287,7 +288,7 @@ void ASpaceApePlayerCharacter::Fire(FVector _FireDirection) {
 			EquippedWeaponComponent->Shoot(_FireDirection);
 
 			bCanFire = false;
-			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &ASpaceApePlayerCharacter::ShotTimerExpired, FireRate);
+			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &ASpaceApePlayerCharacter::ShotTimerExpired, EquippedWeaponComponent->GetFireRate());
 
 			if (FireSound != nullptr) {
 				MulticastPlayFireSound();
@@ -306,17 +307,83 @@ void ASpaceApePlayerCharacter::MulticastPlayFireSound_Implementation() {
 
 /*
 This will be used primarily for weapon pickups.
-Replaces the current weapon witha  new one.
+Replaces the current weapon witha  new o ne.
 Need to destroy old component and perhaps perform some kind of check.
 This method should eventually be made private/ protected, and some kind of public condition check method should handle weapon changes.
 */
 void ASpaceApePlayerCharacter::ChangeWeapon(TSubclassOf<UPlayerWeaponComponent> _NewWeapon) {
-	EquippedWeaponComponent = ConstructObject<UPlayerWeaponComponent>(_NewWeapon, this, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
-	//use newobject instead
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ChangeWeapon. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+
+
+	//EquippedWeaponComponent = ConstructObject<UPlayerWeaponComponent>(_NewWeapon, this, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
+	if (EquippedWeaponComponent != nullptr) EquippedWeaponComponent->DestroyComponent();
+	EquippedWeaponComponent = NewObject<UPlayerWeaponComponent>( this, _NewWeapon, *_NewWeapon->GetName() );
+	EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool);
+
+	EquippedWeaponComponent->RegisterComponent(); // this has been added to enable the component tick for some components
+
+	//delete FireSound;
+	FireSound = EquippedWeaponComponent->GetFireSound();
+
+
+
+	FWeaponData NewWeaponData = EquippedWeaponComponent->GetWeaponData();
+
+	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Emerald, FString::Printf(TEXT(" GetWeaponData Speed =  %f. Is Server = %s"), NewWeaponData.BaseProjectileSpeed, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+
+	//empty the array, or else multiple pointers to the same address will be added
+	ProjectilesToBeModified.Empty();
+	// Clear the timer - just in case.
+	World->GetTimerManager().ClearTimer(ProjectileModifyTimerHandle);
+
+	if (Role == ROLE_Authority) {
+
+		TArray<AActor*>* PoolArray = ProjectilePool->GetArrayPointer();
+		for (AActor* Actor : *PoolArray) {
+			//Cast<ASpaceApeProjectile>(Actor)->PassNewWeaponData(NewWeaponData);
+			//Cast<ASpaceApeProjectile>(Actor)->MulticastAssignNewWeaponData(NewWeaponData);
+
+			// store a reference to the projectle in this array, for use in the ModifyProjectileLoop
+			ProjectilesToBeModified.Add(Actor);
+		}
+	}
+
+
+	World->GetTimerManager().SetTimer(ProjectileModifyTimerHandle, this, &ASpaceApePlayerCharacter::ModifyProjectileLoop, 0.1f, true);
+
+
+	// Force the object pool to destroy returned references that were not updated in the previous loop
+	ProjectilePool->ReplaceInUseObjectsWithDuplicates();
 }
 
+/*
+Called by the ProjectileModifyTimerHandle, this method passes information to each of the projectiles inside of the ProjectilesToBeModified array before removing them in turn.
+This loop is used to spread the load on the network over a longer period of time than is afforded by a single for loop. 
+This is because ASpaceApeProjectile::PassNewWeaponData calls a multicast function, which, when called multiple times in a single tick
+This approach adds a small amount of work to the server's CPU and memory instead, but should produce no visual or gameplay issues.
+*/
+void ASpaceApePlayerCharacter::ModifyProjectileLoop() {
+	if (ProjectilesToBeModified.Num() > 0) {
+		// Pass the Weapon Data to the projectile and remove it from the array.
+		Cast<ASpaceApeProjectile>(ProjectilesToBeModified.Top())->PassNewWeaponData(EquippedWeaponComponent->GetWeaponData());
+		ProjectilesToBeModified.Pop();
+	}
+	else {
+		//stop timer once all projectiles have been modified
+		World->GetTimerManager().ClearTimer(ProjectileModifyTimerHandle);
+	}
+}
+
+
+
+/*
+Might want a method for PickupWeapon and PickupPowerUp etc
+*/
 void ASpaceApePlayerCharacter::CollectPickup(ABasePickup * _PickupType) {
 	UE_LOG(LogTemp, Warning, TEXT("CollectPickup called"));
+
+
 }
 
 void ASpaceApePlayerCharacter::DealDamage(AActor* _Enemy) {

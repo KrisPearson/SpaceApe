@@ -10,7 +10,18 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Components/ObjectPoolComponent.h"
+#include "Net/UnrealNetwork.h"
+//#include "Components/PlayerWeaponComponent.h"
 #include "Enemy.h"
+
+/*
+The Projectile is responsible for:
+	> Handling Colission
+	> The SPeed of the projectile
+	> Projectile art (meshes, particles)
+
+*/
+
 
 void ASpaceApeProjectile::BeginPlay() {
 	Super::BeginPlay();
@@ -33,6 +44,7 @@ ASpaceApeProjectile::ASpaceApeProjectile()
 	//ProjectileMesh->SetCollisionResponseToChannel(ECollisionChannel::)
 	ProjectileMesh->OnComponentHit.AddDynamic(this, &ASpaceApeProjectile::OnHit);		// set up a notification for when this component hits something
 	RootComponent = ProjectileMesh;
+	//ProjectileMesh->SetIsReplicated(true);
 
 	//ProjectileMesh->SetVisibility(0);
 
@@ -40,6 +52,9 @@ ASpaceApeProjectile::ASpaceApeProjectile()
 	ProjectileParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ProjectileParticle"));
 	ProjectileParticle->SetTemplate(ProjectileParticleAsset.Object);
 	ProjectileParticle->SetupAttachment(RootComponent);
+	//ProjectileParticle->SetIsReplicated(true); // not replicating???
+
+
 
 	ProjectileParticle->EmitterDelay = 0.0f;
 
@@ -47,7 +62,7 @@ ASpaceApeProjectile::ASpaceApeProjectile()
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	ProjectileMovement->UpdatedComponent = ProjectileMesh;
 	ProjectileMovement->InitialSpeed = 2000.f;
-	ProjectileMovement->MaxSpeed = 2000.f;
+	ProjectileMovement->MaxSpeed = 15000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 
 	ProjectileMovement->ProjectileGravityScale = 0.f; // No gravity
@@ -58,6 +73,7 @@ ASpaceApeProjectile::ASpaceApeProjectile()
 	ProjectileMovement->SetUpdatedComponent(GetRootComponent()); // Ensures that the root component is updated by the projectile movement component
 
 	//ProjectileMovement->SetPlaneConstraintAxisSetting(EPlaneConstraintAxisSetting::Z);
+
 
 	// Die after 3 seconds by default
 	//InitialLifeSpan = 3.0f;
@@ -70,6 +86,13 @@ ASpaceApeProjectile::ASpaceApeProjectile()
 	CurrentMoveSpeed = 1500;
 
 	UE_LOG(LogTemp, Log, TEXT(" ASpaceApeProjectile constructor"));
+}
+
+void ASpaceApeProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ASpaceApeProjectile, CurrentMoveSpeed); 
+	DOREPLIFETIME(ASpaceApeProjectile, ProjectileDamage);
 }
 
 void ASpaceApeProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -122,22 +145,22 @@ void ASpaceApeProjectile::ToggleEnabled(bool _value) {
 	//ProjectileMesh->SetVisibility(_value); // need some kind of check to see whether we want this or not
 	if (_value) { // enable the projectile
 
-		UE_LOG(LogTemp, Log, TEXT(" Toggle enabled true"));
+		//UE_LOG(LogTemp, Log, TEXT(" Toggle enabled true"));
 
 		ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		ProjectileParticle->ActivateSystem(true);
 		ProjectileMovement->Activate();
 		ProjectileMovement->SetUpdatedComponent(GetRootComponent()); // moved to constructor
 
-		World->GetTimerManager().SetTimer(ReturnToPoolTimer, this, &ASpaceApeProjectile::ResetProjectile, 6.f);
+		World->GetTimerManager().SetTimer(ReturnToPoolTimer, this, &ASpaceApeProjectile::ResetProjectile, 4.f);
 
 	}
 	else { // disable the projectile
 		
-		UE_LOG(LogTemp, Log, TEXT(" Toggle enabled false"));
+		//UE_LOG(LogTemp, Log, TEXT(" Toggle enabled false"));
 
 		ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		ProjectileParticle->DeactivateSystem();// Deactivate the particle. It may be the case that the particle will reamin if lifetime = 0. If so, check KillOnDeactivate in the particle system.
+		ProjectileParticle->DeactivateSystem();// Deactivate the particle. It may be the case that the particle will remain if lifetime = 0. If so, check KillOnDeactivate in the particle system.
 		ProjectileMovement->Deactivate(); 
 
 	}
@@ -152,9 +175,45 @@ void ASpaceApeProjectile::SetProjectileLocationAndDirection(FVector _Loc, FVecto
 	if (Role == ROLE_Authority) {
 		MulticastSetLocationAndVelocityDirection(_Loc, _Vel, _ToggleEnabled);
 	}
-	//else {
+	else {
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileLocation =. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+
 		//ServerSetLocationAndVelocityDirection(_Loc, _Vel, _ToggleEnabled); // shouldn't need this?
-	//}
+	}
+}
+
+void ASpaceApeProjectile::PassNewWeaponData(FWeaponData _NewWeaponData) {
+
+	//perform a check here to see if in use. If true, then delay the update.
+
+	//WeaponData = _NewWeaponData; //could just use data to set variables in this class? Do we need to store this in a member variable in the projectile class?
+	
+	ProjectileMesh->SetStaticMesh(_NewWeaponData.ProjectileMeshComponent);
+	ProjectileParticle->SetTemplate(_NewWeaponData.ProjectileParticleSystem);
+	ProjectileDamage = _NewWeaponData.BaseWeaponDamage;
+	CurrentMoveSpeed = _NewWeaponData.BaseProjectileSpeed;
+	
+	//MulticastAssignNewWeaponData(_NewWeaponData); // this sets the struc to default params for some reason...
+
+	//if (Role == ROLE_Authority) {}// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileDamage = %d. Server =: %s"), _NewWeaponData.BaseWeaponDamage, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	//else GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileSpeed = %f. Server =: %s"), _NewWeaponData.BaseProjectileSpeed, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+
+	MulticastAssignWeaponDataValues(_NewWeaponData.ProjectileParticleSystem, _NewWeaponData.ProjectileMeshComponent);
+}
+
+void ASpaceApeProjectile::MulticastAssignNewWeaponData_Implementation(FWeaponData _NewWeaponData) {
+	ProjectileMesh->SetStaticMesh(_NewWeaponData.ProjectileMeshComponent);
+	ProjectileParticle->SetTemplate(_NewWeaponData.ProjectileParticleSystem);
+	ProjectileDamage = _NewWeaponData.BaseWeaponDamage;
+	CurrentMoveSpeed = _NewWeaponData.BaseProjectileSpeed;
+}
+
+/*
+For some reason, we need to break up the weapondata to its individual value types in order to pass them to the client, or else they 
+*/
+void ASpaceApeProjectile::MulticastAssignWeaponDataValues_Implementation(UParticleSystem* _NewParticleSystem, UStaticMesh* _NewMesh) {
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" Projectile Name = %s"), *_NewParticleSystem->GetName()));
+	ProjectileParticle->SetTemplate(_NewParticleSystem);
 }
 
 
@@ -198,6 +257,8 @@ void ASpaceApeProjectile::ResetProjectile() {
 		OwningPool->ReturnReusableReference(this);
 	}
 }
+
+
 
 /* 
 Updates the velocity o the projectile on cliets. Called whenever a change is made to the velocity.

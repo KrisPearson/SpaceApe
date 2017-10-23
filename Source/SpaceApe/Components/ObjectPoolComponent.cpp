@@ -50,14 +50,41 @@ AActor* UObjectPoolComponent::GetReusableReference() {
 	}
 	//UE_LOG(LogTemp, Warning, TEXT(" Get object from pool %s"), *PooledObjects.Top()->GetName() );
 	AActor* returnActor = PooledObjects.Top();
+
 	PooledObjects.Pop(); 
+	CurrentNumberOfPooledObjectsInUse++;
+
 	return returnActor;
 }
 
 void UObjectPoolComponent::ReturnReusableReference(AActor * _Ref) {
-	//UE_LOG(LogTemp, Warning, TEXT("Return object to pool %s"), *_Ref->GetName());
+	if (NumberOfObjectsToReplaceWithDuplicates <= 0) {
+
+		UE_LOG(LogTemp, Warning, TEXT("Return object to pool %s"), *_Ref->GetName());
 		_Ref->Reset();
 		PooledObjects.Push(_Ref);
+
+		CurrentNumberOfPooledObjectsInUse--;
+
+	}
+	else{
+		_Ref->Destroy();
+		if (PooledObjects.Num() > 0) {
+			AActor* newobject = DuplicateObject(PooledObjects[0], PooledObjects[0]->GetOuter());
+
+			CurrentNumberOfPooledObjectsInUse--;
+			NumberOfObjectsToReplaceWithDuplicates--;
+		}
+		else {
+			//delay add object
+		}
+	}
+}
+
+void UObjectPoolComponent::ReplaceInUseObjectsWithDuplicates() {
+	int bufferValue = 5; // the buffer value is used to decrease the liklihood that objects slip through the net and are added back to the pool.
+	NumberOfObjectsToReplaceWithDuplicates = CurrentNumberOfPooledObjectsInUse + bufferValue;
+	UE_LOG(LogTemp, Warning, TEXT("NumberOfObjectsToReplaceWithDuplicates = %f"), NumberOfObjectsToReplaceWithDuplicates);
 }
 
 

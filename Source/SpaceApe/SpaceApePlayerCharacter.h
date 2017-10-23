@@ -91,6 +91,12 @@ private:
 	UPROPERTY()
 	class UPlayerWeaponComponent* EquippedWeaponComponent;
 
+	// By storing pointers to each projectile here, they can be modified over a longer period of time, as opposed to doing so in a single for loop - reducing network packet size.
+	TArray<AActor*> ProjectilesToBeModified;
+
+	FTimerHandle ProjectileModifyTimerHandle;
+
+	void ModifyProjectileLoop();
 
 
 
@@ -144,10 +150,11 @@ public:
 	int PlayerStateIndex;
 
 
-	UFUNCTION()
+	//UFUNCTION()  //UFunction cannot be overloaded 
 		void ChangeWeapon(TSubclassOf<class UPlayerWeaponComponent> _NewWeapon);
 
-
+	//UFUNCTION()
+	//	void ChangeWeapon(class UPlayerWeaponComponent* _NewWeapon);
 
 	FORCEINLINE float GetCurrentScore() const { return CurrentScore; }
 	//FORCEINLINE void SpendGold(float Amount) { Amount > GoldCount ? GoldCount += 0.0f : GoldCount -= Amount; GoldCount = FMath::Clamp(GoldCount, 0.0f, 99999.0f); }
