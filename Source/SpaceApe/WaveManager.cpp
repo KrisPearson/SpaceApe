@@ -179,6 +179,7 @@ Resets the values associated with recording the progress of each wave, increases
 and calls GenerateWave. It then triggers a timer handle to call the Start Spawning method.
 */
 void UWaveManager::StartWave() {
+	bHasFinishedSpawning = false;
 	NumberOfGeneratedWaveActions = 0;
 	CurrentWaveActionIndex = 0;
 	CurrentWaveCount++;
@@ -218,6 +219,7 @@ void UWaveManager::StartActionTimer() {
 			PerformWaveAction();
 		}
 	}
+	else bHasFinishedSpawning = true; // enabling this bool permits the manager to begin the next wave
 }
 
 /*
@@ -267,7 +269,7 @@ and ultimately starting the next wave,
 void UWaveManager::RegisterEnemyDeath(AEnemy* _deadEnemyRef) {
 	AliveEnemyArray.Remove(_deadEnemyRef);
 
-	if (AliveEnemyArray.Num() <= 0 ) { // <<<<<<<<<<<Should be improved to use NumberOfGeneratedWaveActions (or similar counter)
+	if (AliveEnemyArray.Num() <= 0 && bHasFinishedSpawning) { // <<<<<<<<<<<Should be improved to use NumberOfGeneratedWaveActions (or similar counter)
 		StartWave();
 	}
 }

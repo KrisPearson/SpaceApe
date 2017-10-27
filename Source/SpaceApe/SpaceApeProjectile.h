@@ -40,6 +40,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"), Replicated)
 	UParticleSystemComponent* ProjectileParticle;
 
+	/** Projectile Particle System - Played on colission**/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"), Replicated)
+		UParticleSystemComponent* HitEffectParticle;
+
+	/** Sound played on colission */
+	UPROPERTY(Category = Audio, EditAnywhere, BlueprintReadWrite)
+		class USoundBase* HitSoundEffect;
+
 	/** Projectile movement component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UProjectileMovementComponent* ProjectileMovement;
@@ -115,6 +123,7 @@ private:
 
 	// Used to keep track of and destroy components
 	TArray<class UProjectileComponents* > ProjectileComponents;
+
 
 
 };

@@ -39,7 +39,6 @@ protected:
 private:
 
 
-
 	int32 CurrentNumberOfPooledObjectsInUse = 0;
 
 	int32 NumberOfObjectsToReplaceWithDuplicates = 0;

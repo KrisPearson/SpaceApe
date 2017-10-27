@@ -15,8 +15,9 @@ UBeamRifle_PWComponent::UBeamRifle_PWComponent() {
 	UE_LOG(LogTemp, Warning, TEXT(" UBeamRifle_PWComponent Constructor"));
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(TEXT("StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'"));
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("ParticleSystem'/Game/Particles/TrailBeam_Particle.TrailBeam_Particle'"));
-	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("SoundWave'/Game/TwinStick/Audio/RailDriver.RailDriver'"));
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'"));
+	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'"));
+	static ConstructorHelpers::FObjectFinder<USoundBase> HitAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'"));
 
 
 	TArray<class UProjectileComponent*> ProjectileComponentArray;
@@ -25,13 +26,15 @@ UBeamRifle_PWComponent::UBeamRifle_PWComponent() {
 	// could perform a level check here to alter the weapon data
 
 	WeaponData = FWeaponData(
-		ProjectileMeshAsset.Object,
-		ProjectileParticleAsset.Object,
-		FireAudio.Object,
-		ProjectileComponentArray,
-		1.5f,
-		400,
-		9500
+		ProjectileComponentArray, // Components to be added to the projectile actor
+		ProjectileMeshAsset.Object, // Mesh used for collision events and visual appearance
+		ProjectileParticleAsset.Object, // The constant visual effect particle ( for trails etc)
+		nullptr,
+		FireAudio.Object, // Sound effect played when fired
+		HitAudio.Object, // Sound effect played when hit
+		1.5f, // Delay between shots
+		100, // Damage of projectiles
+		9500 // Movement Speed of projectiles
 	);
 
 
@@ -73,6 +76,7 @@ void UBeamRifle_PWComponent::Shoot(FVector _FireDirection) {
 
 	LoopIndex = 0;
 	GetWorld()->GetTimerManager().SetTimer(FireLoopTimerHandle, this, &UBeamRifle_PWComponent::FireLoop, TimeBetweenProjectiles, true);
+
 }
 
 void UBeamRifle_PWComponent::FireLoop() {

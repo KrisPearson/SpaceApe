@@ -7,20 +7,22 @@
 
 UGaussBlaster_PWComponent::UGaussBlaster_PWComponent() {
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(TEXT("/Game/TwinStick/Meshes/TwinStickProjectile.TwinStickProjectile"));
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("/Game/Particles/Blaster_Particle"));
-	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("/Game/TwinStick/Audio/KKIIDDZZ_00018"));
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("ParticleSystem'/Game/Particles/WeaponParticles/Blaster_Particle.Blaster_Particle'"));
+	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/GaussFire_01.GaussFire_01'"));
 
 
 	TArray<class UProjectileComponent*> ProjectileComponentArray;
 
 	WeaponData = FWeaponData(
-		ProjectileMeshAsset.Object,
-		ProjectileParticleAsset.Object,
-		FireAudio.Object,
-		ProjectileComponentArray,
-		0.2f,
-		45,
-		2000
+		ProjectileComponentArray, // Components to be added to the projectile actor
+		ProjectileMeshAsset.Object, // Mesh used for collision events and visual appearance
+		ProjectileParticleAsset.Object, // The constant visual effect particle ( for trails etc)
+		nullptr,
+		FireAudio.Object, // Sound effect played when fired
+		nullptr,
+		0.185f, // Delay between shots
+		55, // Damage of projectiles
+		2600 // Movement Speed of projectiles
 	);
 }
 

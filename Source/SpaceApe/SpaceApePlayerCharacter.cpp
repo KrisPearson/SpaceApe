@@ -315,46 +315,48 @@ void ASpaceApePlayerCharacter::ChangeWeapon(TSubclassOf<UPlayerWeaponComponent> 
 
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ChangeWeapon. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
 
+	if (_NewWeapon) {
 
-	//EquippedWeaponComponent = ConstructObject<UPlayerWeaponComponent>(_NewWeapon, this, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
-	if (EquippedWeaponComponent != nullptr) EquippedWeaponComponent->DestroyComponent();
-	EquippedWeaponComponent = NewObject<UPlayerWeaponComponent>( this, _NewWeapon, *_NewWeapon->GetName() );
-	EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool);
+		//EquippedWeaponComponent = ConstructObject<UPlayerWeaponComponent>(_NewWeapon, this, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
+		if (EquippedWeaponComponent != nullptr) EquippedWeaponComponent->DestroyComponent();
+		EquippedWeaponComponent = NewObject<UPlayerWeaponComponent>(this, _NewWeapon, *_NewWeapon->GetName());
+		EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool);
 
-	EquippedWeaponComponent->RegisterComponent(); // this has been added to enable the component tick for some components
+		EquippedWeaponComponent->RegisterComponent(); // this has been added to enable the component tick for some components
 
-	//delete FireSound;
-	FireSound = EquippedWeaponComponent->GetFireSound();
+		//delete FireSound;
+		FireSound = EquippedWeaponComponent->GetFireSound();
 
 
 
-	FWeaponData NewWeaponData = EquippedWeaponComponent->GetWeaponData();
+		FWeaponData NewWeaponData = EquippedWeaponComponent->GetWeaponData();
 
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Emerald, FString::Printf(TEXT(" GetWeaponData Speed =  %f. Is Server = %s"), NewWeaponData.BaseProjectileSpeed, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Emerald, FString::Printf(TEXT(" GetWeaponData Speed =  %f. Is Server = %s"), NewWeaponData.BaseProjectileSpeed, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
 
-	//empty the array, or else multiple pointers to the same address will be added
-	ProjectilesToBeModified.Empty();
-	// Clear the timer - just in case.
-	World->GetTimerManager().ClearTimer(ProjectileModifyTimerHandle);
+		//empty the array, or else multiple pointers to the same address will be added
+		ProjectilesToBeModified.Empty();
+		// Clear the timer - just in case.
+		World->GetTimerManager().ClearTimer(ProjectileModifyTimerHandle);
 
-	if (Role == ROLE_Authority) {
+		if (Role == ROLE_Authority) {
 
-		TArray<AActor*>* PoolArray = ProjectilePool->GetArrayPointer();
-		for (AActor* Actor : *PoolArray) {
-			//Cast<ASpaceApeProjectile>(Actor)->PassNewWeaponData(NewWeaponData);
-			//Cast<ASpaceApeProjectile>(Actor)->MulticastAssignNewWeaponData(NewWeaponData);
+			TArray<AActor*>* PoolArray = ProjectilePool->GetArrayPointer();
+			for (AActor* Actor : *PoolArray) {
+				//Cast<ASpaceApeProjectile>(Actor)->PassNewWeaponData(NewWeaponData);
+				//Cast<ASpaceApeProjectile>(Actor)->MulticastAssignNewWeaponData(NewWeaponData);
 
-			// store a reference to the projectle in this array, for use in the ModifyProjectileLoop
-			ProjectilesToBeModified.Add(Actor);
+				// store a reference to the projectle in this array, for use in the ModifyProjectileLoop
+				ProjectilesToBeModified.Add(Actor);
+			}
 		}
+
+
+		World->GetTimerManager().SetTimer(ProjectileModifyTimerHandle, this, &ASpaceApePlayerCharacter::ModifyProjectileLoop, 0.1f, true);
+
+
+		// Force the object pool to destroy returned references that were not updated in the previous loop
+		ProjectilePool->ReplaceInUseObjectsWithDuplicates();
 	}
-
-
-	World->GetTimerManager().SetTimer(ProjectileModifyTimerHandle, this, &ASpaceApePlayerCharacter::ModifyProjectileLoop, 0.1f, true);
-
-
-	// Force the object pool to destroy returned references that were not updated in the previous loop
-	ProjectilePool->ReplaceInUseObjectsWithDuplicates();
 }
 
 /*
@@ -390,19 +392,31 @@ void ASpaceApePlayerCharacter::DealDamage(AActor* _Enemy) {
 
 	if (AEnemy* Enemy = Cast<AEnemy>(_Enemy)) {
 
-		const int ScoreValue = Enemy->GetScoreValue();
-			
-			// Inform the enemy of damage and check whether the enemy died as a result.
-		if (Enemy->ReceiveDamage(PlayerProjectileDamage)) {
-			CurrentScore += ScoreValue;
-		}
-		else CurrentScore += 1; 
-	}
+		bool isEnemyDead;
 
+		int scoreFromDamage;
+
+		Enemy->ReceiveDamage(EquippedWeaponComponent->GetWeaponData().BaseWeaponDamage, isEnemyDead, scoreFromDamage);
+
+	
+
+		if (isEnemyDead) {
+			scoreFromDamage += Enemy->GetScoreValue();
+		}
+
+		CurrentScore += scoreFromDamage;
+		
+			// Inform the enemy of damage and check whether the enemy died as a result.
+		//if (Enemy->ReceiveDamage(/*PlayerProjectileDamage*/EquippedWeaponComponent->GetWeaponData().BaseWeaponDamage, isEnemyDead, scoreFromDamage)) { // enemy recieve damage could return the damage done (int) in order to add that to the score
+		//	CurrentScore += ScoreValue;
+		//}
+		//else CurrentScore += scoreFromDamage;
+	}
 
 	GetController()->PlayerState->Score = CurrentScore; // needs storing. Could pass this to the server to validate
 
 	//NOTE: It isn't safe to store score on the actor, as it could potentially be cheated.
+
 
 }
 

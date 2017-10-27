@@ -10,7 +10,9 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Components/ObjectPoolComponent.h"
+#include "Sound/SoundBase.h"
 #include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
 //#include "Components/PlayerWeaponComponent.h"
 #include "Enemy.h"
 
@@ -103,6 +105,8 @@ void ASpaceApeProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor
 		OnEnemyHit.Broadcast(OtherActor);
 	}
 
+	if (HitSoundEffect != nullptr) { UGameplayStatics::PlaySound2D(this, HitSoundEffect); 	UE_LOG(LogTemp, Log, TEXT(" HitSoundEffect played")); }
+
 	/*
 
 	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL)) {
@@ -190,6 +194,8 @@ void ASpaceApeProjectile::PassNewWeaponData(FWeaponData _NewWeaponData) {
 	
 	ProjectileMesh->SetStaticMesh(_NewWeaponData.ProjectileMeshComponent);
 	ProjectileParticle->SetTemplate(_NewWeaponData.ProjectileParticleSystem);
+	//HitEffectParticle->SetTemplate(_NewWeaponData.HitEffectParticleSystem); // careful! it seems that passing a nullptr to this method result sin a break (settaticmesh same?) may need 'if' check
+	HitSoundEffect = _NewWeaponData.HitSound;
 	ProjectileDamage = _NewWeaponData.BaseWeaponDamage;
 	CurrentMoveSpeed = _NewWeaponData.BaseProjectileSpeed;
 	
@@ -204,6 +210,8 @@ void ASpaceApeProjectile::PassNewWeaponData(FWeaponData _NewWeaponData) {
 void ASpaceApeProjectile::MulticastAssignNewWeaponData_Implementation(FWeaponData _NewWeaponData) {
 	ProjectileMesh->SetStaticMesh(_NewWeaponData.ProjectileMeshComponent);
 	ProjectileParticle->SetTemplate(_NewWeaponData.ProjectileParticleSystem);
+	HitEffectParticle->SetTemplate(_NewWeaponData.HitEffectParticleSystem);
+	HitSoundEffect = _NewWeaponData.HitSound;
 	ProjectileDamage = _NewWeaponData.BaseWeaponDamage;
 	CurrentMoveSpeed = _NewWeaponData.BaseProjectileSpeed;
 }
@@ -212,8 +220,8 @@ void ASpaceApeProjectile::MulticastAssignNewWeaponData_Implementation(FWeaponDat
 For some reason, we need to break up the weapondata to its individual value types in order to pass them to the client, or else they 
 */
 void ASpaceApeProjectile::MulticastAssignWeaponDataValues_Implementation(UParticleSystem* _NewParticleSystem, UStaticMesh* _NewMesh) {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" Projectile Name = %s"), *_NewParticleSystem->GetName()));
 	ProjectileParticle->SetTemplate(_NewParticleSystem);
+	ProjectileMesh->SetStaticMesh(_NewMesh);
 }
 
 

@@ -26,16 +26,21 @@ struct FWeaponData {
 		// type data used to add new components to projectiles. (needed here?)
 		//class BaseProjectileComponent ProjectileComponent;
 
-		// The mesh used on the projectile
-		UStaticMesh* ProjectileMeshComponent;
+	TArray<class UProjectileComponent*> ProjectileComponents;
+
+	// The mesh used on the projectile
+	UStaticMesh* ProjectileMeshComponent;
 
 	// The Particle System of the projectile
 	class UParticleSystem* ProjectileParticleSystem; // SetTemplate() takes UParticleSystem* as argument
 
-													 // The audio effect played when firing a projectile
-	USoundBase* FireSound;
+	class UParticleSystem* HitEffectParticleSystem;
+													 
+	USoundBase* FireSound; // The audio effect played when firing a projectile
 
-	TArray<class UProjectileComponent*> ProjectileComponents;
+	USoundBase* HitSound;
+
+
 
 	// The delay between shots
 	float WeaponFireRate;
@@ -47,13 +52,13 @@ struct FWeaponData {
 	float BaseProjectileSpeed;
 
 
-
-
 	FWeaponData() {};
-	FWeaponData(UStaticMesh* _ProjectileMeshComponent, UParticleSystem* _ProjectileParticleSystem, USoundBase* _FireSound, TArray<class UProjectileComponent*> _ProjectileComponents, float _WeaponFireRate, int _BaseWeaponDamage, float _BaseProjectileSpeed) {
+	FWeaponData(TArray<class UProjectileComponent*> _ProjectileComponents, UStaticMesh* _ProjectileMeshComponent = nullptr, UParticleSystem* _ProjectileParticleSystem = nullptr, UParticleSystem* _HitEffectParticleSystem = nullptr, USoundBase* _FireSound = nullptr, USoundBase* _HitSound = nullptr, float _WeaponFireRate = 1, int _BaseWeaponDamage = 10, float _BaseProjectileSpeed = 1000) {
 		ProjectileMeshComponent = _ProjectileMeshComponent;
 		ProjectileParticleSystem = _ProjectileParticleSystem;
+		HitEffectParticleSystem = _HitEffectParticleSystem;
 		FireSound = _FireSound;
+		HitSound = _HitSound;
 		ProjectileComponents = _ProjectileComponents;
 		WeaponFireRate = _WeaponFireRate;
 		BaseWeaponDamage = _BaseWeaponDamage;

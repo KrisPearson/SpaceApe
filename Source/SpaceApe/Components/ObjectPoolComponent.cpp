@@ -82,7 +82,7 @@ void UObjectPoolComponent::ReturnReusableReference(AActor * _Ref) {
 }
 
 void UObjectPoolComponent::ReplaceInUseObjectsWithDuplicates() {
-	int bufferValue = 5; // the buffer value is used to decrease the liklihood that objects slip through the net and are added back to the pool.
+	int bufferValue = 10; // the buffer value is used to decrease the liklihood that objects slip through the net and are added back to the pool.
 	NumberOfObjectsToReplaceWithDuplicates = CurrentNumberOfPooledObjectsInUse + bufferValue;
 	UE_LOG(LogTemp, Warning, TEXT("NumberOfObjectsToReplaceWithDuplicates = %f"), NumberOfObjectsToReplaceWithDuplicates);
 }

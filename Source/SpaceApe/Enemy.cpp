@@ -62,37 +62,55 @@ void AEnemy::BeginPlay() {
 This is called by the attacking class following a successful attack.
 Returns a bool in order to inform the attacking class of the enemy's demise.
 */
-bool AEnemy::ReceiveDamage(int _DamageAmount) {
+void AEnemy::ReceiveDamage(int _DamageAmount, bool& _IsDead, int& _ScoreToAdd) {
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ReceiveDamage Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
 	//DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
 
+	// could pass enemyscore value + damage here? Perhaps add to a single in return value, as opposed to pointer params? Leave it as is for now....
+
 	if (Role < ROLE_Authority)
 	{
-		ServerReceiveDamage(_DamageAmount);
+		UE_LOG(LogTemp, Warning, TEXT("WARNING: ServerReceiveDamage Disabled"));
+
+	//	ServerReceiveDamage(_DamageAmount);
 	}
 	else {
+		
+		// Add the damage dealt to the score and check whether the damage dealt leaves the enemy at 0hp. If so, then remove the remainder.
+		_ScoreToAdd = (CurrentHealthPoints - _DamageAmount) <= 0 ? (_DamageAmount - (CurrentHealthPoints % _DamageAmount)) : _DamageAmount;
 		CurrentHealthPoints -= _DamageAmount;
+
 		if (!CheckIfAlive())
 		{
+			_IsDead = true;
 			EnemyDeath();
-			return true;
-		}
+
+		} 
 		else {
-			//PlayDamageFlash();
+			_IsDead = false;
 			MulticastPlayDamageFlash();
 		}
 	}
 
-	return false;
 }
 
+/*
+
 void AEnemy::ServerReceiveDamage_Implementation(int _DamageAmount) {
-	ReceiveDamage(_DamageAmount);
+
+	UE_LOG(LogTemp, Warning, TEXT("ServerReceiveDamage_Implementation called"));
+
+
+	bool B;
+	int I;
+
+	ReceiveDamage(_DamageAmount, B, I);
 }
 
 bool AEnemy::ServerReceiveDamage_Validate(int _DamageAmount) {
 	return true;
 }
+*/
 
 
 /*

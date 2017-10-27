@@ -47,13 +47,15 @@ UPlayerWeaponComponent::UPlayerWeaponComponent()
 
 
 	WeaponData = FWeaponData(
-		ProjectileMeshAsset.Object,
-		ProjectileParticleAsset.Object,
-		FireAudio.Object,
-		ProjectileComponentArray,
-		0.5f,
-		32,
-		500
+		ProjectileComponentArray, // Components to be added to the projectile actor
+		ProjectileMeshAsset.Object, // Mesh used for collision events and visual appearance
+		ProjectileParticleAsset.Object, // The constant visual effect particle ( for trails etc)
+		nullptr,
+		FireAudio.Object, // Sound effect played when fired
+		nullptr,
+		0.5f, // Delay between shots
+		32, // Damage of projectiles
+		500 // Movement Speed of projectiles
 	);
 }
 

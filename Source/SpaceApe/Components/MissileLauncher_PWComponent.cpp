@@ -17,12 +17,14 @@ UMissileLauncher_PWComponent::UMissileLauncher_PWComponent() {
 	TArray<class UProjectileComponent*> ProjectileComponentArray;
 
 	WeaponData = FWeaponData(
-		ProjectileMeshAsset.Object,
-		ProjectileParticleAsset.Object,
-		FireAudio.Object,
-		ProjectileComponentArray,
-		1.f,
-		80,
-		800
+		ProjectileComponentArray, // Components to be added to the projectile actor
+		ProjectileMeshAsset.Object, // Mesh used for collision events and visual appearance
+		ProjectileParticleAsset.Object, // The constant visual effect particle ( for trails etc)
+		nullptr,
+		FireAudio.Object, // Sound effect played when fired
+		nullptr,
+		1.f, // Delay between shots
+		80, // Damage of projectiles
+		800 // Movement Speed of projectiles
 	);
 }
