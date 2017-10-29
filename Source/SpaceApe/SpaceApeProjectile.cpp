@@ -56,6 +56,11 @@ ASpaceApeProjectile::ASpaceApeProjectile()
 	ProjectileParticle->SetupAttachment(RootComponent);
 	//ProjectileParticle->SetIsReplicated(true); // not replicating???
 
+	HitEffectParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("HitParticle"));
+	HitEffectParticle->SetupAttachment(RootComponent);
+	HitEffectParticle->DeactivateSystem();
+
+
 
 
 	ProjectileParticle->EmitterDelay = 0.0f;
@@ -95,6 +100,7 @@ void ASpaceApeProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 
 	DOREPLIFETIME(ASpaceApeProjectile, CurrentMoveSpeed); 
 	DOREPLIFETIME(ASpaceApeProjectile, ProjectileDamage);
+	DOREPLIFETIME(ASpaceApeProjectile, WeaponDataID);
 }
 
 void ASpaceApeProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -105,7 +111,12 @@ void ASpaceApeProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor
 		OnEnemyHit.Broadcast(OtherActor);
 	}
 
-	if (HitSoundEffect != nullptr) { UGameplayStatics::PlaySound2D(this, HitSoundEffect); 	UE_LOG(LogTemp, Log, TEXT(" HitSoundEffect played")); }
+	if (HitSoundEffect != nullptr) { UGameplayStatics::PlaySound2D(this, HitSoundEffect); }
+	//ProjectileParticle->DeactivateSystem();
+
+	if (HitEffectParticle != nullptr) { HitEffectParticle->ActivateSystem(true); }
+
+	ToggleEnabled(false);
 
 	/*
 
@@ -133,8 +144,11 @@ void ASpaceApeProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor
 
 	//Destroy();
 	if (OwningPool != NULL) {
-		SetProjectileLocationAndDirection(FVector(0, 0, 0), FVector(0, 0, 0), false); // this doesn't appear to be working
-		OwningPool->ReturnReusableReference(this);
+		//SetProjectileLocationAndDirection(FVector(0, 0, 0), FVector(0, 0, 0), false); // this doesn't appear to be working
+		//OwningPool->ReturnReusableReference(this);
+		if (World != nullptr) World->GetTimerManager().ClearTimer(ReturnToPoolTimer);
+		if (World != nullptr) World->GetTimerManager().SetTimer(ReturnToPoolTimer, this, &ASpaceApeProjectile::ResetProjectile, 4.f);
+
 	}
 }
 
@@ -144,6 +158,7 @@ when restarting the projectile following a collission or other similar event.
 In order to enable the projectile over the network, this method should  be called before applying other changes.
 */
 void ASpaceApeProjectile::ToggleEnabled(bool _value) {
+	
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ToggleEnabled. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
 
 	//ProjectileMesh->SetVisibility(_value); // need some kind of check to see whether we want this or not
@@ -152,11 +167,13 @@ void ASpaceApeProjectile::ToggleEnabled(bool _value) {
 		//UE_LOG(LogTemp, Log, TEXT(" Toggle enabled true"));
 
 		ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		ProjectileParticle->ActivateSystem(true);
+		ProjectileMesh->SetVisibility(true);
+		ProjectileParticle->ActivateSystem(true);	
 		ProjectileMovement->Activate();
+		HitEffectParticle->DeactivateSystem();
 		ProjectileMovement->SetUpdatedComponent(GetRootComponent()); // moved to constructor
 
-		World->GetTimerManager().SetTimer(ReturnToPoolTimer, this, &ASpaceApeProjectile::ResetProjectile, 4.f);
+		if (World != nullptr) World->GetTimerManager().SetTimer(ReturnToPoolTimer, this, &ASpaceApeProjectile::ResetProjectile, 4.f);
 
 	}
 	else { // disable the projectile
@@ -164,9 +181,15 @@ void ASpaceApeProjectile::ToggleEnabled(bool _value) {
 		//UE_LOG(LogTemp, Log, TEXT(" Toggle enabled false"));
 
 		ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		ProjectileMesh->SetVisibility(false);
 		ProjectileParticle->DeactivateSystem();// Deactivate the particle. It may be the case that the particle will remain if lifetime = 0. If so, check KillOnDeactivate in the particle system.
+		//HitEffectParticle->DeactivateSystem();
 		ProjectileMovement->Deactivate(); 
 
+		//if (bRequiresNewWeaponDataAssigning) {
+			//PassNewWeaponData(StoredWeaponData);
+			//bRequiresNewWeaponDataAssigning = false;
+		//}
 	}
 }
 
@@ -179,32 +202,41 @@ void ASpaceApeProjectile::SetProjectileLocationAndDirection(FVector _Loc, FVecto
 	if (Role == ROLE_Authority) {
 		MulticastSetLocationAndVelocityDirection(_Loc, _Vel, _ToggleEnabled);
 	}
-	else {
-		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileLocation =. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
-
-		//ServerSetLocationAndVelocityDirection(_Loc, _Vel, _ToggleEnabled); // shouldn't need this?
-	}
 }
 
-void ASpaceApeProjectile::PassNewWeaponData(FWeaponData _NewWeaponData) {
+void ASpaceApeProjectile::PassNewWeaponData(FWeaponData _NewWeaponData, int _NewWeaponDataID) {
 
-	//perform a check here to see if in use. If true, then delay the update.
+	UE_LOG(LogTemp, Log, TEXT(" PassNewWeaponData old id = %d __ new id = %d"), WeaponDataID, _NewWeaponDataID);
+	if (Role == ROLE_Authority) {
 
-	//WeaponData = _NewWeaponData; //could just use data to set variables in this class? Do we need to store this in a member variable in the projectile class?
-	
-	ProjectileMesh->SetStaticMesh(_NewWeaponData.ProjectileMeshComponent);
-	ProjectileParticle->SetTemplate(_NewWeaponData.ProjectileParticleSystem);
-	//HitEffectParticle->SetTemplate(_NewWeaponData.HitEffectParticleSystem); // careful! it seems that passing a nullptr to this method result sin a break (settaticmesh same?) may need 'if' check
-	HitSoundEffect = _NewWeaponData.HitSound;
-	ProjectileDamage = _NewWeaponData.BaseWeaponDamage;
-	CurrentMoveSpeed = _NewWeaponData.BaseProjectileSpeed;
-	
-	//MulticastAssignNewWeaponData(_NewWeaponData); // this sets the struc to default params for some reason...
+		//perform a check here to see if in use. If true, then delay the update.
 
-	//if (Role == ROLE_Authority) {}// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileDamage = %d. Server =: %s"), _NewWeaponData.BaseWeaponDamage, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
-	//else GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileSpeed = %f. Server =: %s"), _NewWeaponData.BaseProjectileSpeed, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+		WeaponDataID = _NewWeaponDataID;
 
-	MulticastAssignWeaponDataValues(_NewWeaponData.ProjectileParticleSystem, _NewWeaponData.ProjectileMeshComponent);
+		//if (!bIsCurrentlyInUse) {
+
+			//WeaponData = _NewWeaponData; //could just use data to set variables in this class? Do we need to store this in a member variable in the projectile class?
+
+		ProjectileMesh->SetStaticMesh(_NewWeaponData.ProjectileMeshComponent);
+		ProjectileParticle->SetTemplate(_NewWeaponData.ProjectileParticleSystem);
+		HitEffectParticle->SetTemplate(_NewWeaponData.HitEffectParticleSystem);
+		HitSoundEffect = _NewWeaponData.HitSound;
+		ProjectileDamage = _NewWeaponData.BaseWeaponDamage;
+		CurrentMoveSpeed = _NewWeaponData.BaseProjectileSpeed;
+
+		//MulticastAssignNewWeaponData(_NewWeaponData); // this sets the struc to default params for some reason...
+
+		//if (Role == ROLE_Authority) {}// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileDamage = %d. Server =: %s"), _NewWeaponData.BaseWeaponDamage, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+		//else GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileSpeed = %f. Server =: %s"), _NewWeaponData.BaseProjectileSpeed, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+
+		MulticastAssignWeaponDataValues(_NewWeaponData.ProjectileMeshComponent, _NewWeaponData.ProjectileParticleSystem, _NewWeaponData.HitEffectParticleSystem, _NewWeaponData.HitSound, _NewWeaponData.BaseProjectileSpeed);
+		//MulticastSetLocationAndVelocityDirection(GetActorLocation(), ProjectileMovement->Velocity, true);
+		//}
+	//else {
+	//	bRequiresNewWeaponDataAssigning = true;
+	//	StoredWeaponData = _NewWeaponData;
+	//}
+	}
 }
 
 void ASpaceApeProjectile::MulticastAssignNewWeaponData_Implementation(FWeaponData _NewWeaponData) {
@@ -219,9 +251,14 @@ void ASpaceApeProjectile::MulticastAssignNewWeaponData_Implementation(FWeaponDat
 /*
 For some reason, we need to break up the weapondata to its individual value types in order to pass them to the client, or else they 
 */
-void ASpaceApeProjectile::MulticastAssignWeaponDataValues_Implementation(UParticleSystem* _NewParticleSystem, UStaticMesh* _NewMesh) {
+void ASpaceApeProjectile::MulticastAssignWeaponDataValues_Implementation(UStaticMesh* _NewMesh, UParticleSystem* _NewParticleSystem, UParticleSystem* _NewHitParticleSystem, USoundBase* _HitSound, float _NewSpeed) {
+	ProjectileMesh->SetStaticMesh(_NewMesh); 
 	ProjectileParticle->SetTemplate(_NewParticleSystem);
-	ProjectileMesh->SetStaticMesh(_NewMesh);
+	HitEffectParticle->SetTemplate(_NewHitParticleSystem);
+	HitSoundEffect = _HitSound;
+	//ProjectileDamage = _BaseWeaponDamage;
+	CurrentMoveSpeed = _NewSpeed;
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" MulticastAssignWeaponDataValues_Implementation. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
 }
 
 
@@ -254,7 +291,7 @@ void ASpaceApeProjectile::MulticastSetLocationAndVelocityDirection_Implementatio
 	
 	//ProjectileMovement->Velocity = FVector(0, 0, 0);
 	//ProjectileMovement->SetVelocityInLocalSpace(_Vel * CurrentMoveSpeed); // Apply velocity in fire direction	
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" MulticastSetLocationAndVelocityDirection_Implementation. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT(" MulticastSetLocationAndVelocityDirection_Implementation. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
 	//UE_LOG(LogTemp, Log, TEXT(" SetVelocityInLocalSpace %f %f %f"), _Vel.X, _Vel.Y, _Vel.Z);
 
 }
@@ -265,6 +302,8 @@ void ASpaceApeProjectile::ResetProjectile() {
 		OwningPool->ReturnReusableReference(this);
 	}
 }
+
+
 
 
 

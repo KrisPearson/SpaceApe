@@ -18,33 +18,19 @@ public:
 
 	void FillPool(TSubclassOf<AActor> _ActorToSpawn, int _Count);
 
-
 	AActor* GetReusableReference();
 
 	void ReturnReusableReference(AActor* _Ref);
 
-	
-
 	TArray<AActor*>* GetArrayPointer() { return &PooledObjects; }
 
-	//TSubclassOf<AActor> GetPooledObjectsType();
-	//void AssignDelegateToPooledObjects(void(*PoolObjectFunc)(), void(*OtherClassFunc)());
-
-	void ReplaceInUseObjectsWithDuplicates();
 
 protected:
 	TArray<AActor*> PooledObjects;
 
-
 private:
 
-
 	int32 CurrentNumberOfPooledObjectsInUse = 0;
-
-	int32 NumberOfObjectsToReplaceWithDuplicates = 0;
-
-	TSubclassOf<AActor> PooledObjectsType;
-
 
 	UFUNCTION(Server, Reliable, WithValidation)
 		void SpawnActorForPool(TSubclassOf<AActor> _ActorToSpawn);

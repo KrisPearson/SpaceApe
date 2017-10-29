@@ -6,6 +6,7 @@
 #include "Runtime/Engine/Classes/Materials/MaterialInstance.h"
 #include "Net/UnrealNetwork.h"
 #include "Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h"
+#include "Pickups/WeaponPickup.h"
 #include "BehaviorTree/BehaviorTree.h"
 
 
@@ -143,8 +144,15 @@ bool AEnemy::CheckIfAlive() {
 Destroy this actor following a broadcast to the WaveManager.
 */
 void AEnemy::EnemyDeath() {
+	SpawnPickup();
 	EnemyDeathDelegate.Broadcast(this);
 	Destroy();
+}
+
+
+void AEnemy::SpawnPickup() {
+	AWeaponPickup* NewPickup = GetWorld()->SpawnActor<AWeaponPickup>(this->GetActorLocation(), this->GetActorRotation());
+
 }
 
 int AEnemy::GetScoreValue() {

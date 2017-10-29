@@ -23,8 +23,8 @@ UMissileLauncher_PWComponent::UMissileLauncher_PWComponent() {
 		nullptr,
 		FireAudio.Object, // Sound effect played when fired
 		nullptr,
-		1.f, // Delay between shots
-		80, // Damage of projectiles
-		800 // Movement Speed of projectiles
+		0.9f, // Delay between shots
+		200, // Damage of projectiles
+		1800 // Movement Speed of projectiles
 	);
 }

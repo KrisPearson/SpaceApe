@@ -25,17 +25,15 @@ class SPACEAPE_API AWeaponPickup : public ABasePickup
 
 		AWeaponPickup();
 
-		AWeaponPickup(EWeaponPickupType _EWeaponType);
-
 protected:
-
-
 
 	/** Overridable function to do something when overlapped*/
 	virtual void OnBeginOverlapAction(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 	
 	UPROPERTY(Category = Gameplay, EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<class UPlayerWeaponComponent> WeaponType;
+
+	virtual void AssignRandomPickupType() override;
 
 private:
 

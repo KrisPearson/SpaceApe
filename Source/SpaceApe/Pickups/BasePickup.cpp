@@ -13,7 +13,6 @@ ABasePickup::ABasePickup()
 	MyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("MyRootComponent"));
 	RootComponent = MyRoot;
 
-
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProjectileMesh"));
 	//PickupMesh->SetStaticMesh(ProjectileMeshAsset.Object);
 	//PickupMesh->SetupAttachment(RootComponent);
@@ -22,11 +21,13 @@ ABasePickup::ABasePickup()
 	PickupMesh->OnComponentBeginOverlap.AddDynamic(this, &ABasePickup::OnBeginOverlap); // set up a notification for when this component hits something
 	PickupMesh->SetupAttachment(MyRoot);
 
-	FString MeshFilePath = TEXT("StaticMesh'/Game/Geometry/Meshes/1M_Cube.1M_Cube'"); // better than this - load an icon and assign it to a dynamic material texture parameter?
+	FString MeshFilePath = TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Cube.Shape_Cube'"); // better than this - load an icon and assign it to a dynamic material texture parameter?
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> LoadedMesh(*MeshFilePath);
-	PickupMesh->StaticMesh = LoadedMesh.Object;
 
+	PickupMesh->SetStaticMesh(LoadedMesh.Object);
 	PickupMesh->BodyInstance.SetCollisionProfileName("Pickup");
+
+	bReplicates = true;
 }
 
 void ABasePickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
@@ -39,6 +40,8 @@ void ABasePickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 void ABasePickup::BeginPlay()
 {
 	Super::BeginPlay();
+
+	AssignRandomPickupType();
 	
 }
 
@@ -55,35 +58,44 @@ void ABasePickup::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 void ABasePickup::OnBeginOverlapAction(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult) {
 	// do we need to perform some kind of rpc here?
 	
-	
-	if (HasAuthority())
-	{
-		// Server
-		UE_LOG(LogTemp, Warning, TEXT("Trigger Activated - Server, : %s"), *OtherActor->GetName());
+	if (OtherActor->IsA(ASpaceApePlayerCharacter::StaticClass() )) {
+		if (HasAuthority())
+		{
+			// Server
+			UE_LOG(LogTemp, Warning, TEXT("Trigger Activated - Server, : %s"), *OtherActor->GetName());
 
-		// Adding in possiblity to move effect through code if lacking animations
-		// And doppler the sound but probably wont use it.
-		const FVector SpawnLocation = GetActorLocation();
-		PlayPickUpSound(SpawnLocation);
-		HandleOverlap();
+			// Adding in possiblity to move effect through code if lacking animations
+			// And doppler the sound but probably wont use it.
+			const FVector SpawnLocation = GetActorLocation();
+			PlayPickUpSound(SpawnLocation);
+			HandleOverlap();
+		}
+		else
+		{
+			// Client
+
+			UE_LOG(LogTemp, Warning, TEXT("Trigger Activated - Client, : %s"), *OtherActor->GetName());
+
+			// Adding in possiblity to move effect through code if lacking animations
+			// And doppler the sound but probably wont use it.
+			const FVector SpawnLocation = GetActorLocation();
+			PlayPickUpSound(SpawnLocation);
+			HandleOverlap();
+			//PlayPickUpEffect(SpawnLocation);
+			//// Might wanna delay this by 1s, and just "Fake Destroy" StaticMesh, we'll see
+			//Destroy();
+
+			//ServerHandleOverlap();
+		}
 	}
-	else
-	{
-		// Client
+}
 
-		UE_LOG(LogTemp, Warning, TEXT("Trigger Activated - Client, : %s"), *OtherActor->GetName());
+void ABasePickup::LoadAndUpdateMaterial_Implementation(const FString& FilePath) {
+	UE_LOG(LogTemp, Warning, TEXT("LoadAndUpdateMaterial_Implementation = %s"), *FilePath);
+	PickupMesh->SetMaterial(0, Cast<UMaterialInstance>(StaticLoadObject(UMaterialInstance::StaticClass(), NULL, *FilePath)));
+}
 
-		// Adding in possiblity to move effect through code if lacking animations
-		// And doppler the sound but probably wont use it.
-		const FVector SpawnLocation = GetActorLocation();
-		PlayPickUpSound(SpawnLocation);
-		HandleOverlap();
-		//PlayPickUpEffect(SpawnLocation);
-		//// Might wanna delay this by 1s, and just "Fake Destroy" StaticMesh, we'll see
-		//Destroy();
-
-		//ServerHandleOverlap();
-	}
+void ABasePickup::AssignRandomPickupType() {
 }
 
 void ABasePickup::HandleOverlap() {

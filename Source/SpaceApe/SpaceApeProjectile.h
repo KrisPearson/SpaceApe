@@ -74,7 +74,7 @@ public:
 
 	void SetPoolReference(class UObjectPoolComponent* _PoolRef) { OwningPool = _PoolRef; }
 
-	void PassNewWeaponData(struct FWeaponData _NewWeaponData);
+	void PassNewWeaponData(struct FWeaponData _NewWeaponData, int _NewWeaponDataID);
 
 	UFUNCTION(NetMulticast, Reliable)
 		void MulticastAssignNewWeaponData(FWeaponData _NewWeaponData);
@@ -82,6 +82,8 @@ public:
 
 
 	UParticleSystemComponent* GetParticleComponent() { return ProjectileParticle;}
+
+	int GetWeaponDataID() { return WeaponDataID; }
 
 
 protected:
@@ -95,8 +97,8 @@ protected:
 
 
 	UFUNCTION(NetMulticast, Reliable)
-		void MulticastAssignWeaponDataValues(UParticleSystem* _NewParticleSystem,UStaticMesh* _NewMesh);
-	void MulticastAssignWeaponDataValues_Implementation(UParticleSystem* _NewParticleSystem, UStaticMesh* _NewMesh);
+		void MulticastAssignWeaponDataValues(UStaticMesh* _NewMesh, UParticleSystem* _NewParticleSystem, UParticleSystem* _NewHitParticleSystem, USoundBase* _HitSound, float _NewSpeed);
+		void MulticastAssignWeaponDataValues_Implementation(UStaticMesh* _NewMesh, UParticleSystem* _NewParticleSystem, UParticleSystem* _NewHitParticleSystem, USoundBase* _HitSound, float _NewSpeed);
 
 
 	/*
@@ -120,9 +122,18 @@ private:
 
 	UWorld* World;
 
+	// this number is used to associate the projectile with a weapon component. If the numbers do not match, then the projectile is out of date.
+	UPROPERTY(Replicated)
+	int WeaponDataID;
+
+
+	FWeaponData StoredWeaponData;
 
 	// Used to keep track of and destroy components
 	TArray<class UProjectileComponents* > ProjectileComponents;
+
+
+		
 
 
 

@@ -53,8 +53,8 @@ UPlayerWeaponComponent::UPlayerWeaponComponent()
 		nullptr,
 		FireAudio.Object, // Sound effect played when fired
 		nullptr,
-		0.5f, // Delay between shots
-		32, // Damage of projectiles
+		0.2f, // Delay between shots
+		40, // Damage of projectiles
 		500 // Movement Speed of projectiles
 	);
 }
@@ -74,6 +74,8 @@ void UPlayerWeaponComponent::BeginPlay()
 
 	UE_LOG(LogTemp, Warning, TEXT("Base UPlayerWeaponComponent BeginPlay"));
 }
+
+
 
 // Called every frame
 void UPlayerWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -98,8 +100,11 @@ void UPlayerWeaponComponent::Shoot(FVector _FireDirection) {
 
 	ASpaceApeProjectile* Projectile = Cast<ASpaceApeProjectile>( PlayerProjectilePoolRef->GetReusableReference() );
 
+	
+
 	if (Projectile != nullptr) { 
 		//Projectile->ToggleEnabled(true); // moved to the projectile's multicast. If needed, then a bool param could be added to the multicast method.
+		CheckAndUpdateProjectile(Projectile);
 		Projectile->SetProjectileLocationAndDirection(SpawnLocation, _FireDirection, true);
 	}
 	else {
@@ -126,5 +131,14 @@ UObjectPoolComponent * UPlayerWeaponComponent::GetObjectPoolReference() {
 		return PlayerProjectilePoolRef;
 	}
 	else return nullptr;
+}
+
+void UPlayerWeaponComponent::CheckAndUpdateProjectile(ASpaceApeProjectile * _Projectile) {
+	// need an RPC for this?
+	if (_Projectile->GetWeaponDataID() != GetUniqueID()) {
+		// update the weapon data of the projectile, and update the id
+		_Projectile->PassNewWeaponData(WeaponData, GetUniqueID());
+
+	}
 }
 

@@ -397,7 +397,7 @@ void UWaveManager::GenerateWave() {
 	CurrentWave = NULL;
 
 	// Determines the number and types of enemies. (Eventually this will be recalculated each wave in order to increase difficulty as the game progresses)
-	int CurrentSpendableEnemyPoints = 1000; 
+	int CurrentSpendableEnemyPoints = 1000 * CurrentWaveCount; 
 
 	TArray<FWaveSpawnAction> SpawnActionsArray;
 

@@ -96,6 +96,7 @@ void ASpaceApePlayerCharacter::BeginPlay() {
 			Cast<ASpaceApeProjectile>(Actor)->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
 			Cast<ASpaceApeProjectile>(Actor)->SetPoolReference(ProjectilePool);
 		}
+
 	}
 
 	/*
@@ -109,6 +110,7 @@ void ASpaceApePlayerCharacter::BeginPlay() {
 	//ProjectilePool->FillPool(ASpaceApeProjectile::StaticClass(), 5);
 	//if (EquippedWeaponComponent) { EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool); }
 	*/
+
 }
 
 
@@ -298,8 +300,7 @@ void ASpaceApePlayerCharacter::Fire(FVector _FireDirection) {
 }
 
 void ASpaceApePlayerCharacter::MulticastPlayFireSound_Implementation() {
-	if (FireSound != nullptr)
-	{
+	if (FireSound != nullptr) {
 		UGameplayStatics::PlaySound2D(this, FireSound);	
 		//UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 	}
@@ -327,54 +328,11 @@ void ASpaceApePlayerCharacter::ChangeWeapon(TSubclassOf<UPlayerWeaponComponent> 
 		//delete FireSound;
 		FireSound = EquippedWeaponComponent->GetFireSound();
 
-
-
 		FWeaponData NewWeaponData = EquippedWeaponComponent->GetWeaponData();
 
-		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Emerald, FString::Printf(TEXT(" GetWeaponData Speed =  %f. Is Server = %s"), NewWeaponData.BaseProjectileSpeed, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
-
-		//empty the array, or else multiple pointers to the same address will be added
-		ProjectilesToBeModified.Empty();
-		// Clear the timer - just in case.
-		World->GetTimerManager().ClearTimer(ProjectileModifyTimerHandle);
-
-		if (Role == ROLE_Authority) {
-
-			TArray<AActor*>* PoolArray = ProjectilePool->GetArrayPointer();
-			for (AActor* Actor : *PoolArray) {
-				//Cast<ASpaceApeProjectile>(Actor)->PassNewWeaponData(NewWeaponData);
-				//Cast<ASpaceApeProjectile>(Actor)->MulticastAssignNewWeaponData(NewWeaponData);
-
-				// store a reference to the projectle in this array, for use in the ModifyProjectileLoop
-				ProjectilesToBeModified.Add(Actor);
-			}
-		}
-
-
-		World->GetTimerManager().SetTimer(ProjectileModifyTimerHandle, this, &ASpaceApePlayerCharacter::ModifyProjectileLoop, 0.1f, true);
-
-
-		// Force the object pool to destroy returned references that were not updated in the previous loop
-		ProjectilePool->ReplaceInUseObjectsWithDuplicates();
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Emerald, FString::Printf(TEXT(" GetWeaponData Speed =  %f. Is Server = %s"), NewWeaponData.BaseProjectileSpeed, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
 	}
-}
 
-/*
-Called by the ProjectileModifyTimerHandle, this method passes information to each of the projectiles inside of the ProjectilesToBeModified array before removing them in turn.
-This loop is used to spread the load on the network over a longer period of time than is afforded by a single for loop. 
-This is because ASpaceApeProjectile::PassNewWeaponData calls a multicast function, which, when called multiple times in a single tick
-This approach adds a small amount of work to the server's CPU and memory instead, but should produce no visual or gameplay issues.
-*/
-void ASpaceApePlayerCharacter::ModifyProjectileLoop() {
-	if (ProjectilesToBeModified.Num() > 0) {
-		// Pass the Weapon Data to the projectile and remove it from the array.
-		Cast<ASpaceApeProjectile>(ProjectilesToBeModified.Top())->PassNewWeaponData(EquippedWeaponComponent->GetWeaponData());
-		ProjectilesToBeModified.Pop();
-	}
-	else {
-		//stop timer once all projectiles have been modified
-		World->GetTimerManager().ClearTimer(ProjectileModifyTimerHandle);
-	}
 }
 
 

@@ -75,6 +75,8 @@ public:
 
 private:
 
+	class ASpaceApeProjectile* CurrentProjectileTypeObject;
+
 	/* Flag to control firing  */
 	uint32 bCanFire : 1;
 
@@ -90,13 +92,6 @@ private:
 
 	UPROPERTY()
 	class UPlayerWeaponComponent* EquippedWeaponComponent;
-
-	// By storing pointers to each projectile here, they can be modified over a longer period of time, as opposed to doing so in a single for loop - reducing network packet size.
-	TArray<AActor*> ProjectilesToBeModified;
-
-	FTimerHandle ProjectileModifyTimerHandle;
-
-	void ModifyProjectileLoop();
 
 
 

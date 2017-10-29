@@ -56,6 +56,8 @@ protected:
 	// A reference to the character's projectile object pool
 	UObjectPoolComponent* PlayerProjectilePoolRef;
 
+	void CheckAndUpdateProjectile(class ASpaceApeProjectile* _Projectile);
+
 
 public:
 
@@ -65,6 +67,11 @@ public:
 
 
 	FWeaponData GetWeaponData() { return WeaponData;  }
+
+private:
+
+	//FTimerHandle ShootDelayTimer;
+
 };
 
 

@@ -15,7 +15,7 @@ public:
 	// Sets default values for this actor's properties
 	ABasePickup();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"), Replicated)
 		UStaticMeshComponent* PickupMesh;
 
 
@@ -24,7 +24,7 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/** Audio feedback - for when you pick up an item - could replicate this sound but might not*/
-	UPROPERTY(EditAnywhere, Category = "C++ Base Class")
+	UPROPERTY(EditAnywhere, Category = "C++ Base Class", Replicated)
 		USoundBase* PickUpSound;
 
 	/** Visual feedback - for when you pick up an item - should replicate probably*/
@@ -44,8 +44,11 @@ protected:
 	/* Overridable function to do something when overlapped*/
 	virtual void OnBeginOverlapAction(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	UFUNCTION(NetMulticast, Reliable)
+		void LoadAndUpdateMaterial(const FString& FilePath);
+	void LoadAndUpdateMaterial_Implementation(const FString& FilePath);
 
-
+	virtual void AssignRandomPickupType();
 
 private:
 

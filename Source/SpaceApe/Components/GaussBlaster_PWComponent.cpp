@@ -10,7 +10,6 @@ UGaussBlaster_PWComponent::UGaussBlaster_PWComponent() {
 	static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("ParticleSystem'/Game/Particles/WeaponParticles/Blaster_Particle.Blaster_Particle'"));
 	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/GaussFire_01.GaussFire_01'"));
 
-
 	TArray<class UProjectileComponent*> ProjectileComponentArray;
 
 	WeaponData = FWeaponData(
@@ -40,7 +39,9 @@ void UGaussBlaster_PWComponent::Shoot(FVector _FireDirection) {
 	FVector SpawnLocationB = SpawnLocation - FVector(20, 20, 0);
 
 	if (Projectile != nullptr) {
-		//Projectile->ToggleEnabled(true); // moved to the projectile's multicast. If needed, then a bool param could be added to the multicast method.
+
+		UE_LOG(LogTemp, Warning, TEXT("Component ID = %d __ Projectile ID = %d"), this->GetUniqueID(), Projectile->GetWeaponDataID() );
+		CheckAndUpdateProjectile(Projectile);
 		Projectile->SetProjectileLocationAndDirection(SpawnLocationA, _FireDirection, true);
 	}
 	else {
@@ -50,6 +51,7 @@ void UGaussBlaster_PWComponent::Shoot(FVector _FireDirection) {
 	ASpaceApeProjectile* ProjectileB = Cast<ASpaceApeProjectile>(PlayerProjectilePoolRef->GetReusableReference());
 
 	if (ProjectileB != nullptr) {
+		CheckAndUpdateProjectile(ProjectileB);
 		ProjectileB->SetProjectileLocationAndDirection(SpawnLocationB, _FireDirection, true);
 	}
 	else {

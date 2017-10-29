@@ -119,6 +119,8 @@ protected:
 		void MulticastPlayDamageFlash();
 	void MulticastPlayDamageFlash_Implementation();
 
+	void SpawnPickup();
+
 
 //	UFUNCTION()
 //		virtual void OnRep_Damaged();

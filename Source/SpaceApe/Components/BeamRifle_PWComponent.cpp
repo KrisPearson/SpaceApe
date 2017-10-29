@@ -16,6 +16,8 @@ UBeamRifle_PWComponent::UBeamRifle_PWComponent() {
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(TEXT("StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'"));
 	static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'"));
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> HitParticleAsset(TEXT("ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'"));
+
 	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'"));
 	static ConstructorHelpers::FObjectFinder<USoundBase> HitAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'"));
 
@@ -29,10 +31,10 @@ UBeamRifle_PWComponent::UBeamRifle_PWComponent() {
 		ProjectileComponentArray, // Components to be added to the projectile actor
 		ProjectileMeshAsset.Object, // Mesh used for collision events and visual appearance
 		ProjectileParticleAsset.Object, // The constant visual effect particle ( for trails etc)
-		nullptr,
+		HitParticleAsset.Object,
 		FireAudio.Object, // Sound effect played when fired
 		HitAudio.Object, // Sound effect played when hit
-		1.5f, // Delay between shots
+		1.4f, // Delay between shots
 		100, // Damage of projectiles
 		9500 // Movement Speed of projectiles
 	);
@@ -99,8 +101,8 @@ void UBeamRifle_PWComponent::FireLoop() {
 	ASpaceApeProjectile* Projectile = Cast<ASpaceApeProjectile>(PlayerProjectilePoolRef->GetReusableReference());
 
 	if (Projectile != nullptr) {
-		//Projectile->ToggleEnabled(true); // moved to the projectile's multicast. If needed, then a bool param could be added to the multicast method.
 
+		CheckAndUpdateProjectile(Projectile);
 
 		Projectile->SetProjectileLocationAndDirection(SpawnLocationForbeam, FireDirection, true); // still want to do this for the beam?
 
@@ -114,7 +116,7 @@ void UBeamRifle_PWComponent::FireLoop() {
 																							 //	beam->SetBeamSourcePoint(1, SpawnLocation, 1);
 																							 //	beam->SetBeamTargetPoint(1, (SpawnLocation +_FireDirection * 500), 1);
 																							 //}
-		CurrentBeamProjectiles.Add(Projectile); //need to consider order they are added in order to correctly adjust time input
+		CurrentBeamProjectiles.Add(Projectile); //need to consider order they are added in order to correctly adjust time input for spline?
 		// tell component on projectile to follow spline?
 
 
