@@ -46,6 +46,7 @@ ASpaceApeProjectile::ASpaceApeProjectile()
 
 	//ProjectileMesh->SetVisibility(0);
 
+
 	ProjectileParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ProjectileParticle"));
 	ProjectileParticle->SetTemplate(ProjectileParticleAsset.Object);
 	ProjectileParticle->SetupAttachment(RootComponent);
@@ -98,13 +99,8 @@ void ASpaceApeProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME(ASpaceApeProjectile, WeaponDataID);
 }
 
-
-
 void ASpaceApeProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	// check projectile components for 
-
-
 	if (OnEnemyHit.IsBound())
 	{
 		//UE_LOG(LogTemp, Log, TEXT("Hit Actor"));
@@ -151,8 +147,6 @@ void ASpaceApeProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor
 
 	}
 }
-
-
 
 /*
 Enables and disabled the projectile. Used for getting it from and returning it too the object pool and

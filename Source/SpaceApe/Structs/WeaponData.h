@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Runtime/Engine/Classes/Engine/StaticMesh.h"
 #include "Components/ActorComponent.h"
+
 #include "WeaponData.generated.h"
 
 

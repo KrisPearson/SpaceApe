@@ -6,6 +6,14 @@
 #include "GameFramework/Character.h"
 #include "SpaceApePlayerCharacter.generated.h"
 
+
+UENUM(BlueprintType)		//"BlueprintType" is essential to include
+enum class EWeaponTier : uint8 {
+	WT_1 	UMETA(DisplayName = "WeaponTier_1"),
+	WT_2 	UMETA(DisplayName = "WeaponTier_2"),
+	WT_3 	UMETA(DisplayName = "WeaponTier_3")
+};
+
 UCLASS()
 class SPACEAPE_API ASpaceApePlayerCharacter : public ACharacter
 {
@@ -72,6 +80,8 @@ public:
 	UPROPERTY(Category = Gameplay, EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<class UPlayerWeaponComponent> DefaultWeaponComponent;
 
+	EWeaponTier GetCurrentWeaponTier() { return CurrentWeaponTier;  }
+
 
 private:
 
@@ -93,6 +103,9 @@ private:
 	UPROPERTY()
 	class UPlayerWeaponComponent* EquippedWeaponComponent;
 
+	// This keeps track of the weapon tier of the character, and is used to change the weapon data values
+	EWeaponTier CurrentWeaponTier;
+
 
 
 protected:
@@ -105,6 +118,8 @@ protected:
 		float PlayerProjectileDamage = 10.f;
 
 	class UObjectPoolComponent* ProjectilePool;
+
+	//void CheckTierUpgrade();
 
 
 public:

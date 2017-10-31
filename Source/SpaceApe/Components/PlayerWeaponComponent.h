@@ -8,7 +8,7 @@
 #include "Structs/WeaponData.h"
 #include "PlayerWeaponComponent.generated.h"
 
-
+enum class EWeaponTier : uint8;
 
 class UObjectPoolComponent;
 
@@ -58,6 +58,7 @@ protected:
 
 	void CheckAndUpdateProjectile(class ASpaceApeProjectile* _Projectile);
 
+	EWeaponTier WeaponTier;
 
 public:
 
@@ -70,7 +71,7 @@ public:
 
 private:
 
-	//FTimerHandle ShootDelayTimer;
+
 
 };
 

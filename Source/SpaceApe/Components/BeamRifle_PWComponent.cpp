@@ -8,25 +8,96 @@
 #include "EngineUtils.h"
 #include "Components/SplineComponent.h"
 #include "UObject/UObjectGlobals.h"
+#include "SpaceApePlayerCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 
 
 UBeamRifle_PWComponent::UBeamRifle_PWComponent() {
 	UE_LOG(LogTemp, Warning, TEXT(" UBeamRifle_PWComponent Constructor"));
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(TEXT("StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'"));
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'"));
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> HitParticleAsset(TEXT("ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'"));
+	//static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(TEXT("StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'"));
+	//static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'"));
+	//static ConstructorHelpers::FObjectFinder<UParticleSystem> HitParticleAsset(TEXT("ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'"));
 
-	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'"));
-	static ConstructorHelpers::FObjectFinder<USoundBase> HitAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'"));
+	//static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'"));
+	//static ConstructorHelpers::FObjectFinder<USoundBase> HitAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'"));
 
 
 	TArray<class UProjectileComponent*> ProjectileComponentArray;
+	FString MeshPath;
+	FString ProjectileParticlePath;
+	FString HitParticlePath;
+	FString FireAudioPath;
+	FString HitAudioPath;
+	float DelayBetweenShots;
+	int DamageOfProjectiles;
+	float MovementSpeedOfProjectiles;
 
+	switch (WeaponTier) {
+	case EWeaponTier::WT_1:
+		MeshPath = "StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'";
+		ProjectileParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'";
+		HitParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'";
+		FireAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'";
+		HitAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'";
+		DelayBetweenShots = 1.4f;
+		DamageOfProjectiles = 80;
+		MovementSpeedOfProjectiles = 9500;
+		break;
 
-	// could perform a level check here to alter the weapon data
+	case EWeaponTier::WT_2:
+		MeshPath = "StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'";
+		ProjectileParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'";
+		HitParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'";
+		FireAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'";
+		HitAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'";
+		DelayBetweenShots = 1.4f;
+		DamageOfProjectiles = 80;
+		MovementSpeedOfProjectiles = 9500;
+		break;
 
+	case EWeaponTier::WT_3:
+		MeshPath = "StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'";
+		ProjectileParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'";
+		HitParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'";
+		FireAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'";
+		HitAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'";
+		DelayBetweenShots = 1.4f;
+		DamageOfProjectiles = 80;
+		MovementSpeedOfProjectiles = 9500;
+		break;
+
+	default:
+		MeshPath = "StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'";
+		ProjectileParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'";
+		HitParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'";
+		FireAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'";
+		HitAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'";
+		DelayBetweenShots = 1.4f;
+		DamageOfProjectiles = 80;
+		MovementSpeedOfProjectiles = 9500;
+		break;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(*MeshPath);
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(*ProjectileParticlePath);
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> HitParticleAsset(*HitParticlePath);
+	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudioAsset(*FireAudioPath);
+	static ConstructorHelpers::FObjectFinder<USoundBase> HitAudioAsset(*HitAudioPath);
+
+	WeaponData = FWeaponData(
+		ProjectileComponentArray,
+		ProjectileMeshAsset.Object,
+		ProjectileParticleAsset.Object,
+		HitParticleAsset.Object,
+		FireAudioAsset.Object,
+		HitAudioAsset.Object,
+		DelayBetweenShots,
+		DamageOfProjectiles,
+		MovementSpeedOfProjectiles
+	);
+
+	/*
 	WeaponData = FWeaponData(
 		ProjectileComponentArray, // Components to be added to the projectile actor
 		ProjectileMeshAsset.Object, // Mesh used for collision events and visual appearance
@@ -38,11 +109,11 @@ UBeamRifle_PWComponent::UBeamRifle_PWComponent() {
 		100, // Damage of projectiles
 		9500 // Movement Speed of projectiles
 	);
+	*/
 
 
 	BeamSpline = CreateDefaultSubobject<USplineComponent>(TEXT("Beam Spline Component"));
 	BeamSpline->bSplineHasBeenEdited = true;
-
 
 	PrimaryComponentTick.bCanEverTick = false;
 	//SetComponentTickEnabled(true);

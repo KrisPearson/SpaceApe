@@ -4,7 +4,7 @@
 #include "Components/PlayerWeaponComponent.h"
 #include "Components/ObjectPoolComponent.h"
 #include "Particles/ParticleSystem.h"
-#include "Components/PlayerWeaponComponent.h"
+//#include "Components/PlayerWeaponComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "SpaceApePlayerCharacter.h"
 
@@ -19,9 +19,7 @@ The Player Weapon Component dictates:
 
 
 // Sets default values for this component's properties
-UPlayerWeaponComponent::UPlayerWeaponComponent()
-{
-
+UPlayerWeaponComponent::UPlayerWeaponComponent() {
 
 	UE_LOG(LogTemp, Warning, TEXT(" UPlayerWeaponComponent Constructor"));
 
@@ -36,27 +34,97 @@ UPlayerWeaponComponent::UPlayerWeaponComponent()
 	//ProjectileToSpawn = ASpaceApeProjectile();
 	// ...
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(TEXT("/Game/TwinStick/Meshes/TwinStickProjectile.TwinStickProjectile"));
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("/Game/Particles/Blaster_Particle"));
-	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("/Game/TwinStick/Audio/KKIIDDZZ_00018"));
+	/*
 
+	TODO:
+	The base class shouldn't have the loading code.
+	Needs replacing with Tier 1/2/3 weaponcomponents.
+	This constructor should just assign character and tier values for derived constructors
+	
+	*/
 
+	if (OwningCharacter) {
+		WeaponTier = OwningCharacter->GetCurrentWeaponTier();
 
-	TArray<class UProjectileComponent*> ProjectileComponentArray;
+		TArray<class UProjectileComponent*> ProjectileComponentArray;
+		FString MeshPath;
+		FString ProjectileParticlePath;
+		FString HitParticlePath;
+		FString FireAudioPath;
+		FString HitAudioPath;
+		float DelayBetweenShots;
+		int DamageOfProjectiles;
+		float MovementSpeedOfProjectiles;
 
+		switch (WeaponTier) {
+		case EWeaponTier::WT_1:
+			MeshPath = "/Game/TwinStick/Meshes/TwinStickProjectile.TwinStickProjectile";
+			ProjectileParticlePath = "/Game/Particles/Blaster_Particle";
+			HitParticlePath = "";
+			FireAudioPath = "/Game/TwinStick/Audio/KKIIDDZZ_00018";
+			HitAudioPath = "";
+			DelayBetweenShots = 0.2f;
+			DamageOfProjectiles = 40;
+			MovementSpeedOfProjectiles = 900;
+			break;
 
+		case EWeaponTier::WT_2:
+			MeshPath = "/Game/TwinStick/Meshes/TwinStickProjectile.TwinStickProjectile";
+			ProjectileParticlePath = "/Game/Particles/Blaster_Particle";
+			HitParticlePath = "";
+			FireAudioPath = "/Game/TwinStick/Audio/KKIIDDZZ_00018";
+			HitAudioPath = "";
+			DelayBetweenShots = 0.2f;
+			DamageOfProjectiles = 40;
+			MovementSpeedOfProjectiles = 900;
+			break;
 
-	WeaponData = FWeaponData(
-		ProjectileComponentArray, // Components to be added to the projectile actor
-		ProjectileMeshAsset.Object, // Mesh used for collision events and visual appearance
-		ProjectileParticleAsset.Object, // The constant visual effect particle ( for trails etc)
-		nullptr,
-		FireAudio.Object, // Sound effect played when fired
-		nullptr,
-		0.2f, // Delay between shots
-		40, // Damage of projectiles
-		500 // Movement Speed of projectiles
-	);
+		case EWeaponTier::WT_3:
+			MeshPath = "/Game/TwinStick/Meshes/TwinStickProjectile.TwinStickProjectile";
+			ProjectileParticlePath = "/Game/Particles/Blaster_Particle";
+			HitParticlePath = "";
+			FireAudioPath = "/Game/TwinStick/Audio/KKIIDDZZ_00018";
+			HitAudioPath = "";
+			DelayBetweenShots = 0.2f;
+			DamageOfProjectiles = 40;
+			MovementSpeedOfProjectiles = 900;
+			break;
+
+		default :
+			MeshPath = "/Game/TwinStick/Meshes/TwinStickProjectile.TwinStickProjectile";
+			ProjectileParticlePath = "/Game/Particles/Blaster_Particle";
+			HitParticlePath = "";
+			FireAudioPath = "/Game/TwinStick/Audio/KKIIDDZZ_00018";
+			HitAudioPath = "";
+			DelayBetweenShots = 0.2f;
+			DamageOfProjectiles = 40;
+			MovementSpeedOfProjectiles = 900;
+			break;
+		}
+
+		static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(*MeshPath);
+		static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(*ProjectileParticlePath);
+		static ConstructorHelpers::FObjectFinder<UParticleSystem> HitParticleAsset(*HitParticlePath);
+		static ConstructorHelpers::FObjectFinder<USoundBase> FireAudioAsset(*FireAudioPath);
+		static ConstructorHelpers::FObjectFinder<USoundBase> HitAudioAsset(*HitAudioPath);	
+
+		WeaponData = FWeaponData(
+			ProjectileComponentArray, 
+			ProjectileMeshAsset.Object, 
+			ProjectileParticleAsset.Object,
+			HitParticleAsset.Object,
+			FireAudioAsset.Object, 
+			HitAudioAsset.Object,
+			DelayBetweenShots,
+			DamageOfProjectiles, 
+			MovementSpeedOfProjectiles
+		);
+	}
+
+	//static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(TEXT("/Game/TwinStick/Meshes/TwinStickProjectile.TwinStickProjectile"));
+	//static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("/Game/Particles/Blaster_Particle"));
+	//static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("/Game/TwinStick/Audio/KKIIDDZZ_00018"));
+
 }
 
 
