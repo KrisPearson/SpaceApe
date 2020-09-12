@@ -21,7 +21,7 @@ void ANetworkPlayerState::BeginPlay() {
 
 void ANetworkPlayerState::ChangePlayerName() {
 	//check if this has authority
-	if (Role == ROLE_Authority)
+	if (HasAuthority())
 	{
 		//try to get the NetworkedGameInstance
 		UNetworkGameInstance* NWGameInstance = Cast<UNetworkGameInstance>(GetWorld()->GetGameInstance());

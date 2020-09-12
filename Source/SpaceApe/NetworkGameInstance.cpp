@@ -471,14 +471,14 @@ void UNetworkGameInstance::StartOnlineGame(FString ServerName, int32 MaxNumPlaye
 	ULocalPlayer* const Player = GetFirstGamePlayer();
 
 	// Call our custom HostSession function. GameSessionName is a GameInstance variable
-	HostSession(Player->GetPreferredUniqueNetId(), GameSessionName, ServerName, bIsLAN, bIsPresence, MaxNumPlayers, bIsPasswordProtected, SessionPassword);
+	HostSession(Player->GetPreferredUniqueNetId().GetUniqueNetId(), GameSessionName, ServerName, bIsLAN, bIsPresence, MaxNumPlayers, bIsPasswordProtected, SessionPassword);
 
 }
 
 
 void UNetworkGameInstance::FindOnlineGames(bool bIsLAN, bool bIsPresence) {
 	ULocalPlayer* const Player = GetFirstGamePlayer();
-	FindSessions(Player->GetPreferredUniqueNetId(), GameSessionName, bIsLAN, bIsPresence);
+	FindSessions(Player->GetPreferredUniqueNetId().GetUniqueNetId(), GameSessionName, bIsLAN, bIsPresence);
 }
 
 
@@ -490,7 +490,7 @@ void UNetworkGameInstance::JoinOnlineGame(int32 SessionIndex) {
 
 	MaxPlayersinSession = SearchResult.Session.SessionSettings.NumPublicConnections;
 
-	JoinASession(Player->GetPreferredUniqueNetId(), GameSessionName, SearchResult);
+	JoinASession(Player->GetPreferredUniqueNetId().GetUniqueNetId(), GameSessionName, SearchResult);
 
 }
 
@@ -587,7 +587,7 @@ UTexture2D* UNetworkGameInstance::GetSteamAvatar(const FBPUniqueNetId UniqueNetI
 			delete[] oAvatarRGBA;
 
 			//Setting some Parameters for the Texture and finally returning it
-			Avatar->PlatformData->NumSlices = 1;
+			Avatar->PlatformData->PackedData = 1;
 			Avatar->NeverStream = true;
 			//Avatar->CompressionSettings = TC_EditorIcon;
 

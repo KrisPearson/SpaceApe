@@ -89,13 +89,13 @@ void ALobbyGameMode::UpdatePlayerList() {
 		else
 			TempLobbyPlayerInfo.bPlayerReadyState = false;
 
-		TempLobbyPlayerInfo.PlayerName = Player->PlayerState->PlayerName;
+		TempLobbyPlayerInfo.PlayerName = Player->PlayerState->GetPlayerName();
 		PlayerInfoArray.Add(TempLobbyPlayerInfo);
 	}
 
 	//call all the players to make them update and pass in the player info array
-	for (ANetworkLobbyPlayerController* Player : ConnectedPlayers)
-		Player->Client_UpdatePlayerList(PlayerInfoArray);
+	//for (ANetworkLobbyPlayerController* Player : ConnectedPlayers)
+		//Player->Client_UpdatePlayerList(PlayerInfoArray);
 }
 
 void ALobbyGameMode::StartGameFromLobby() {
@@ -124,7 +124,7 @@ void ALobbyGameMode::PlayerRequestUpdate() {
 
 	//replaces the current widget on the viewport with a new widget
 void ALobbyGameMode::ChangeMenuWidget(TSubclassOf<UUserWidget> _NewWidgetClass) {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ChangeMenuWidget. Is Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ChangeMenuWidget. Is Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
 	if (CurrentWidget != nullptr) {
 		CurrentWidget->RemoveFromViewport();
 		CurrentWidget = nullptr;

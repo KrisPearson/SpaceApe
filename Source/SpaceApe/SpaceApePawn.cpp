@@ -67,7 +67,7 @@ ASpaceApePawn::ASpaceApePawn()
 	bCanFire = true;
 
 	bReplicates = true;
-	bReplicateMovement = true;
+	SetReplicateMovement(true);
 	bAlwaysRelevant = true;
 }
 

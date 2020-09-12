@@ -106,12 +106,12 @@ void ASpaceApePlayerCharacter::Tick(float DeltaSeconds) {
 
 	if (EquippedWeaponComponent != nullptr) {
 		if (FireDirection.SizeSquared() > 0.0f) {
-			if (Role == ROLE_AutonomousProxy) {
+			if (GetLocalRole() == ROLE_AutonomousProxy) {
 				ServerFire(FireDirection);
 
 				EquippedWeaponComponent->Shoot(FireDirection);
 			}
-			else if (Role == ROLE_Authority) {
+			else if (GetLocalRole() == ROLE_Authority) {
 				Fire(FireDirection);
 
 				EquippedWeaponComponent->Shoot(FireDirection);
@@ -281,7 +281,8 @@ Need to destroy old component and perhaps perform some kind of check.
 This method should eventually be made private/ protected, and some kind of public condition check method should handle weapon changes.
 */
 void ASpaceApePlayerCharacter::ChangeWeapon(TSubclassOf<UPlayerWeaponComponent> _NewWeapon) {
-	EquippedWeaponComponent = ConstructObject<UPlayerWeaponComponent>(_NewWeapon, this, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
+	//EquippedWeaponComponent = ConstructObject<UPlayerWeaponComponent>(_NewWeapon, this, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
+	EquippedWeaponComponent = NewObject<UPlayerWeaponComponent>(this, _NewWeapon, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
 }
 
 void ASpaceApePlayerCharacter::DealDamage(AActor* _Enemy) {

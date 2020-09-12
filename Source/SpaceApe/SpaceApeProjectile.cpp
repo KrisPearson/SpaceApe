@@ -48,7 +48,8 @@ ASpaceApeProjectile::ASpaceApeProjectile()
 	InitialLifeSpan = 3.0f;
 
 	bReplicates = true;
-	bReplicateMovement = true;
+	SetReplicateMovement(true);
+	//bReplicateMovement = true;
 
 }
 

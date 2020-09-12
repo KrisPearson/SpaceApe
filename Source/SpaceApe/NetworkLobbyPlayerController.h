@@ -75,16 +75,16 @@ public:
 	*	called from the GameMode when the players need to update the PlayerList in UMG
 	*	@Param	PlayerInfoArray		the player info array passed in from the server
 	*/
-	UFUNCTION(Client, Reliable)
-		void Client_UpdatePlayerList(const TArray<FLobbyPlayerInfo>& PlayerInfoArray);
-	void Client_UpdatePlayerList_Implementation(const TArray<FLobbyPlayerInfo>& PlayerInfoArray);
+	//UFUNCTION(Client, Reliable)
+	//	void Client_UpdatePlayerList(const TArray<FLobbyPlayerInfo>& PlayerInfoArray);
+	//void Client_UpdatePlayerList_Implementation(const TArray<FLobbyPlayerInfo>& PlayerInfoArray);
 
-	/**
-	*	Calls UMG to update the PlayerList
-	*	@Param	PlayerInfoArray		the player info array passed in from the server
-	*/
-	UFUNCTION(BlueprintImplementableEvent, Category = "Network|PlayerList")
-		void UpdateUMGPlayerList(const TArray<struct FLobbyPlayerInfo>& PlayerInfoArray);
+	///**
+	//*	Calls UMG to update the PlayerList
+	//*	@Param	PlayerInfoArray		the player info array passed in from the server
+	//*/
+	//UFUNCTION(BlueprintImplementableEvent, Category = "Network|PlayerList")
+	//	void UpdateUMGPlayerList(const TArray<struct FLobbyPlayerInfo>& PlayerInfoArray);
 
 
 	/**

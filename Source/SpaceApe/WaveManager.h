@@ -121,7 +121,7 @@ struct FEnemyData {
 /**
  * 
  */
-UCLASS(meta = (BlueprintSpawnableComponent))
+UCLASS(BlueprintType/*, meta = (/*BlueprintSpawnableComponent*/)
 class  UWaveManager : public UObject
 {
 	GENERATED_BODY()

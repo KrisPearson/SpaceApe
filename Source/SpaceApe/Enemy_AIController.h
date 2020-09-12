@@ -25,7 +25,7 @@ public:
 
 	AEnemy_AIController();
 
-	virtual void Possess(APawn* InPawn);
+	virtual void OnPossess(APawn* InPawn);
 
 	uint8 EnemyKeyID;
 };

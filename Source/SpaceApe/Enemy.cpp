@@ -63,14 +63,11 @@ This is called by the attacking class following a successful attack.
 Returns a bool in order to inform the attacking class of the enemy's demise.
 */
 bool AEnemy::ReceiveDamage(int _DamageAmount) {
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ReceiveDamage Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ReceiveDamage Called on Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
 	//DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
 
-	if (Role < ROLE_Authority)
-	{
-		ServerReceiveDamage(_DamageAmount);
-	}
-	else {
+
+	if (HasAuthority()) {
 		CurrentHealthPoints -= _DamageAmount;
 		if (!CheckIfAlive())
 		{
@@ -81,6 +78,10 @@ bool AEnemy::ReceiveDamage(int _DamageAmount) {
 			//PlayDamageFlash();
 			MulticastPlayDamageFlash();
 		}
+	}
+	else
+	{
+		ServerReceiveDamage(_DamageAmount);
 	}
 
 	return false;

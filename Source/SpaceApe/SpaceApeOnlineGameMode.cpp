@@ -119,7 +119,7 @@ void ASpaceApeOnlineGameMode::CodeRespawn(APlayerController* _PlayerController, 
 }
 
 void ASpaceApeOnlineGameMode::ServerRespawnPlayerNetwork_Implementation(APlayerController* _PlayerController, TSubclassOf<ACharacter> _PlayerCharacter) {
-	if (Role == ROLE_Authority)
+	if (HasAuthority())
 	{
 		CodeRespawn(_PlayerController, _PlayerCharacter);
 	}

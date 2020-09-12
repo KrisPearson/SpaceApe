@@ -38,13 +38,13 @@ void ANetworkLobbyPlayerController::BeginPlayingState() {
 
 void ANetworkLobbyPlayerController::SendChatMessage(const FText & ChatMessage) {
 	// if this is the server call the game mode to prodcast the Chat Message
-	if (Role == ROLE_Authority)
+	if (HasAuthority())
 	{
 		ALobbyGameMode* GM = Cast<ALobbyGameMode>(GetWorld()->GetAuthGameMode());
 		if (GM)
 		{
 			//Add the player's name to the Chat Message then send it to the server
-			const FText OutChatMessage = FText::FromString(PlayerState->PlayerName + ": " + ChatMessage.ToString());
+			const FText OutChatMessage = FText::FromString(PlayerState->GetPlayerName() + ": " + ChatMessage.ToString());
 			GM->ProdcastChatMessage(OutChatMessage);
 		}
 	}
@@ -66,7 +66,7 @@ void ANetworkLobbyPlayerController::Client_ReceiveChatMessage_Implementation(con
 
 void ANetworkLobbyPlayerController::KickPlayer(int32 PlayerIndex) {
 	//if the player is the host, get the game mode and send it to kick the player from the game
-	if (Role == ROLE_Authority)
+	if (HasAuthority())
 	{
 		ALobbyGameMode* GM = Cast<ALobbyGameMode>(GetWorld()->GetAuthGameMode());
 		if (GM)
@@ -88,14 +88,14 @@ void ANetworkLobbyPlayerController::Client_GotKicked_Implementation() {
 }
 
 //called from server and passes in an array of player infos
-void ANetworkLobbyPlayerController::Client_UpdatePlayerList_Implementation(const TArray<FLobbyPlayerInfo>& PlayerInfoArray) {
-	UpdateUMGPlayerList(PlayerInfoArray);
-}
+//void ANetworkLobbyPlayerController::Client_UpdatePlayerList_Implementation(const TArray<FLobbyPlayerInfo>& PlayerInfoArray) {
+//	UpdateUMGPlayerList(PlayerInfoArray);
+//}
 
 //called fro mthe palyer on begin play to request the player info array fro mthe server
 void ANetworkLobbyPlayerController::RequestServerPlayerListUpdate() {
 	// if this is the server call the game mode to request info
-	if (Role == ROLE_Authority)
+	if (HasAuthority())
 	{
 		ALobbyGameMode* GM = Cast<ALobbyGameMode>(GetWorld()->GetAuthGameMode());
 
@@ -113,7 +113,7 @@ void ANetworkLobbyPlayerController::Server_RequestServerPlayerListUpdate_Impleme
 }
 
 void ANetworkLobbyPlayerController::SetIsReadyState(bool NewReadyState) { // something went wrong here........
-	if (Role == ROLE_Authority)
+	if (HasAuthority())
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("RoleAuthority/ server called"));
 		ANetworkPlayerState* NetworkedPlayerState = Cast<ANetworkPlayerState>(PlayerState);
@@ -133,7 +133,7 @@ void ANetworkLobbyPlayerController::Server_SetIsReadyState_Implementation(bool N
 }
 
 bool ANetworkLobbyPlayerController::CanGameStart() const {
-	if (Role == ROLE_Authority)
+	if (HasAuthority())
 	{
 		ALobbyGameMode* GM = Cast<ALobbyGameMode>(GetWorld()->GetAuthGameMode());
 		if (GM)
@@ -144,7 +144,7 @@ bool ANetworkLobbyPlayerController::CanGameStart() const {
 
 void ANetworkLobbyPlayerController::StartGame() {
 	//if the player is the host, get the game mode and send it to start the game
-	if (Role == ROLE_Authority)
+	if (HasAuthority())
 	{
 		ALobbyGameMode* GM = Cast<ALobbyGameMode>(GetWorld()->GetAuthGameMode());
 		if (GM)

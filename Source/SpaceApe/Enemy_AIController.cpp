@@ -16,8 +16,8 @@ AEnemy_AIController::AEnemy_AIController() {
 	GetPathFollowingComponent()->SetStopMovementOnFinish(false);
 }
 
-void AEnemy_AIController::Possess(APawn * InPawn) {
-	Super::Possess(InPawn);
+void AEnemy_AIController::OnPossess(APawn * InPawn) {
+	Super::OnPossess(InPawn);
 
 	AEnemy* Enemy = Cast<AEnemy>(InPawn);
 
