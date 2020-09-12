@@ -80,11 +80,14 @@ public:
 
 
 	UFUNCTION()
-		virtual bool ReceiveDamage(int _DamageAmount);
+		virtual void ReceiveDamage(int _DamageAmount, bool& _IsDead, int& _ScoreToAdd);
+
+	/*
 	UFUNCTION(Server, Reliable, WithValidation)
 		void ServerReceiveDamage(int _DamageAmount);
 	virtual void ServerReceiveDamage_Implementation(int _DamageAmount);
 	virtual bool ServerReceiveDamage_Validate(int _DamageAmount);
+	*/
 
 	
 	
@@ -115,6 +118,8 @@ protected:
 	UFUNCTION(NetMulticast, reliable)
 		void MulticastPlayDamageFlash();
 	void MulticastPlayDamageFlash_Implementation();
+
+	void SpawnPickup();
 
 
 //	UFUNCTION()

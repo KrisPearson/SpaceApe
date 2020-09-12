@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+//#include "Components/PlayerWeaponComponent.h" // this had to be included here as UFUNCTION does not accept forward delcaration of structs
+#include "Structs/WeaponData.h"
 #include "SpaceApeProjectile.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyHit, AActor*, _Enemy);
@@ -17,13 +19,34 @@ class ASpaceApeProjectile : public AActor
 	GENERATED_BODY()
 
 
+		void BeginPlay() override;
+
+
+protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Replicated)
+		float ProjectileDamage = 10.f;
+
+	// The move speed of the projectile. This is used in SetVelocityDirection to set the velocity 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"), Replicated)
+	float CurrentMoveSpeed = 1000;
 
 	/** Sphere collision component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* ProjectileMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"))
+	/** Projectile Particle System**/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"), Replicated)
 	UParticleSystemComponent* ProjectileParticle;
+
+	/** Projectile Particle System - Played on colission**/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"), Replicated)
+		UParticleSystemComponent* HitEffectParticle;
+
+	/** Sound played on colission */
+	UPROPERTY(Category = Audio, EditAnywhere, BlueprintReadWrite)
+		class USoundBase* HitSoundEffect;
 
 	/** Projectile movement component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
@@ -34,7 +57,7 @@ public:
 
 	/** Function to handle the projectile hitting something */
 	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	/** Returns ProjectileMesh subobject **/
 	FORCEINLINE UStaticMeshComponent* GetProjectileMesh() const { return ProjectileMesh; }
@@ -45,12 +68,73 @@ public:
 		FOnEnemyHit OnEnemyHit;
 
 
+	void ToggleEnabled(bool _value);
 
+	void SetProjectileLocationAndDirection(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+
+	void SetPoolReference(class UObjectPoolComponent* _PoolRef) { OwningPool = _PoolRef; }
+
+	void PassNewWeaponData(struct FWeaponData _NewWeaponData, int _NewWeaponDataID);
+
+	UFUNCTION(NetMulticast, Reliable)
+		void MulticastAssignNewWeaponData(FWeaponData _NewWeaponData);
+	void MulticastAssignNewWeaponData_Implementation(FWeaponData _NewWeaponData);
+
+
+	UParticleSystemComponent* GetParticleComponent() { return ProjectileParticle;}
+
+	int GetWeaponDataID() { return WeaponDataID; }
 
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		float ProjectileDamage = 10.f;
+
+	virtual void PostNetReceiveVelocity(const FVector& NewVelocity) override;
+
+	UFUNCTION(NetMulticast, Reliable)
+		void MulticastSetLocationAndVelocityDirection(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+	void MulticastSetLocationAndVelocityDirection_Implementation(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+
+
+
+	UFUNCTION(NetMulticast, Reliable)
+		void MulticastAssignWeaponDataValues(UStaticMesh* _NewMesh, UParticleSystem* _NewParticleSystem, UParticleSystem* _NewHitParticleSystem, USoundBase* _HitSound, float _NewSpeed);
+		void MulticastAssignWeaponDataValues_Implementation(UStaticMesh* _NewMesh, UParticleSystem* _NewParticleSystem, UParticleSystem* _NewHitParticleSystem, USoundBase* _HitSound, float _NewSpeed);
+
+
+	/*
+	UFUNCTION(Server, Reliable, WithValidation)
+		void ServerSetLocationAndVelocityDirection(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+	void ServerSetLocationAndVelocityDirection_Implementation(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+	bool ServerSetLocationAndVelocityDirection_Validate(FVector _Loc, FVector _Vel, bool _ToggleEnabled);
+	*/
+
+	void ResetProjectile();
+
+
+
+
+
+
+private:
+	class UObjectPoolComponent* OwningPool;
+
+	FTimerHandle ReturnToPoolTimer;
+
+	UWorld* World;
+
+	// this number is used to associate the projectile with a weapon component. If the numbers do not match, then the projectile is out of date.
+	UPROPERTY(Replicated)
+	int WeaponDataID;
+
+
+	FWeaponData StoredWeaponData;
+
+	// Used to keep track of and destroy components
+	TArray<class UProjectileComponents* > ProjectileComponents;
+
+
+		
+
 
 
 };

@@ -16,6 +16,8 @@
 #include "Sound/SoundBase.h"
 #include "Engine.h"
 #include "Components/PlayerWeaponComponent.h"
+#include "Pickups/BasePickup.h"
+#include "Components/ObjectPoolComponent.h"
 #include "EngineUtils.h"
 
 const FName ASpaceApePlayerCharacter::MoveForwardBinding("MoveForward");
@@ -42,6 +44,8 @@ ASpaceApePlayerCharacter::ASpaceApePlayerCharacter() {
 
 
 	//EquippedWeaponComponent = CreateDefaultSubobject<UPlayerWeaponComponent>(TEXT("WUP"));
+
+	ProjectilePool = CreateDefaultSubobject<UObjectPoolComponent>(TEXT("ProjectilePool"));
 
 
 
@@ -81,6 +85,32 @@ void ASpaceApePlayerCharacter::BeginPlay() {
 
 	//UPlayerWeaponComponent* NewWeapon = Cast<UPlayerWeaponComponent>(DefaultWeaponComponent);
 	ChangeWeapon(DefaultWeaponComponent);
+
+	if (Role == ROLE_Authority) {
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" FillPool Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+		ProjectilePool->FillPool(ASpaceApeProjectile::StaticClass(), 60);
+		if (EquippedWeaponComponent) { EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool); }
+
+		TArray<AActor*>* PoolArray = ProjectilePool->GetArrayPointer();
+		for (AActor* Actor : *PoolArray){
+			Cast<ASpaceApeProjectile>(Actor)->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
+			Cast<ASpaceApeProjectile>(Actor)->SetPoolReference(ProjectilePool);
+		}
+
+	}
+
+	/*
+	else {
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" FillPool Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+		
+		//ProjectilePool->FillPool(ASpaceApeProjectile::StaticClass(), 5);
+		//if (EquippedWeaponComponent) { EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool); }
+	}
+
+	//ProjectilePool->FillPool(ASpaceApeProjectile::StaticClass(), 5);
+	//if (EquippedWeaponComponent) { EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool); }
+	*/
+
 }
 
 
@@ -104,17 +134,17 @@ void ASpaceApePlayerCharacter::Tick(float DeltaSeconds) {
 	const FVector FireDirection = FVector(FireForwardValue, FireRightValue, 0.0f);
 
 
+
+
+
+
 	if (EquippedWeaponComponent != nullptr) {
 		if (FireDirection.SizeSquared() > 0.0f) {
-			if (GetLocalRole() == ROLE_AutonomousProxy) {
+			if (Role == ROLE_AutonomousProxy) {
 				ServerFire(FireDirection);
-
-				EquippedWeaponComponent->Shoot(FireDirection);
 			}
-			else if (GetLocalRole() == ROLE_Authority) {
+			else if (Role == ROLE_Authority) {
 				Fire(FireDirection);
-
-				EquippedWeaponComponent->Shoot(FireDirection);
 			}
 		}
 	}
@@ -223,12 +253,14 @@ void ASpaceApePlayerCharacter::ServerFire_Implementation(FVector _FireDirection)
 		const FVector SpawnLocation = GetActorLocation() + FireRotation.RotateVector(GunOffset);
 
 		if (World != NULL) {
-			ASpaceApeProjectile* NewProjectile = World->SpawnActor<ASpaceApeProjectile>(SpawnLocation, FireRotation);
+			//ASpaceApeProjectile* NewProjectile = World->SpawnActor<ASpaceApeProjectile>(SpawnLocation, FireRotation);
+			//NewProjectile->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
 
-			NewProjectile->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
+			EquippedWeaponComponent->Shoot(_FireDirection);
+
 
 			bCanFire = false;
-			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &ASpaceApePlayerCharacter::ShotTimerExpired, FireRate);
+			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &ASpaceApePlayerCharacter::ShotTimerExpired, EquippedWeaponComponent->GetFireRate());
 
 			if (FireSound != nullptr) {
 				MulticastPlayFireSound();
@@ -252,12 +284,13 @@ void ASpaceApePlayerCharacter::Fire(FVector _FireDirection) {
 
 		if (World != NULL) {
 			// spawn the projectile
-			ASpaceApeProjectile* NewProjectile = World->SpawnActor<ASpaceApeProjectile>(SpawnLocation, FireRotation);
+			//ASpaceApeProjectile* NewProjectile = World->SpawnActor<ASpaceApeProjectile>(SpawnLocation, FireRotation);
+			//NewProjectile->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
 
-			NewProjectile->OnEnemyHit.AddDynamic(this, &ASpaceApePlayerCharacter::DealDamage);
+			EquippedWeaponComponent->Shoot(_FireDirection);
 
 			bCanFire = false;
-			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &ASpaceApePlayerCharacter::ShotTimerExpired, FireRate);
+			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &ASpaceApePlayerCharacter::ShotTimerExpired, EquippedWeaponComponent->GetFireRate());
 
 			if (FireSound != nullptr) {
 				MulticastPlayFireSound();
@@ -267,8 +300,7 @@ void ASpaceApePlayerCharacter::Fire(FVector _FireDirection) {
 }
 
 void ASpaceApePlayerCharacter::MulticastPlayFireSound_Implementation() {
-	if (FireSound != nullptr)
-	{
+	if (FireSound != nullptr) {
 		UGameplayStatics::PlaySound2D(this, FireSound);	
 		//UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 	}
@@ -276,32 +308,73 @@ void ASpaceApePlayerCharacter::MulticastPlayFireSound_Implementation() {
 
 /*
 This will be used primarily for weapon pickups.
-Replaces the current weapon witha  new one.
+Replaces the current weapon witha  new o ne.
 Need to destroy old component and perhaps perform some kind of check.
 This method should eventually be made private/ protected, and some kind of public condition check method should handle weapon changes.
 */
 void ASpaceApePlayerCharacter::ChangeWeapon(TSubclassOf<UPlayerWeaponComponent> _NewWeapon) {
-	//EquippedWeaponComponent = ConstructObject<UPlayerWeaponComponent>(_NewWeapon, this, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
-	EquippedWeaponComponent = NewObject<UPlayerWeaponComponent>(this, _NewWeapon, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ChangeWeapon. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+
+	if (_NewWeapon) {
+
+		//EquippedWeaponComponent = ConstructObject<UPlayerWeaponComponent>(_NewWeapon, this, *_NewWeapon->GetName()/*TEXT("InitialWeapon")*/);
+		if (EquippedWeaponComponent != nullptr) EquippedWeaponComponent->DestroyComponent();
+		EquippedWeaponComponent = NewObject<UPlayerWeaponComponent>(this, _NewWeapon, *_NewWeapon->GetName());
+		EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool);
+
+		EquippedWeaponComponent->RegisterComponent(); // this has been added to enable the component tick for some components
+
+		//delete FireSound;
+		FireSound = EquippedWeaponComponent->GetFireSound();
+
+		FWeaponData NewWeaponData = EquippedWeaponComponent->GetWeaponData();
+
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Emerald, FString::Printf(TEXT(" GetWeaponData Speed =  %f. Is Server = %s"), NewWeaponData.BaseProjectileSpeed, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	}
+
+}
+
+
+
+/*
+Might want a method for PickupWeapon and PickupPowerUp etc
+*/
+void ASpaceApePlayerCharacter::CollectPickup(ABasePickup * _PickupType) {
+	UE_LOG(LogTemp, Warning, TEXT("CollectPickup called"));
+
+
 }
 
 void ASpaceApePlayerCharacter::DealDamage(AActor* _Enemy) {
 
 	if (AEnemy* Enemy = Cast<AEnemy>(_Enemy)) {
 
-		const int ScoreValue = Enemy->GetScoreValue();
-			
-			// Inform the enemy of damage and check whether the enemy died as a result.
-		if (Enemy->ReceiveDamage(PlayerProjectileDamage)) {
-			CurrentScore += ScoreValue;
-		}
-		else CurrentScore += 1; 
-	}
+		bool isEnemyDead;
 
+		int scoreFromDamage;
+
+		Enemy->ReceiveDamage(EquippedWeaponComponent->GetWeaponData().BaseWeaponDamage, isEnemyDead, scoreFromDamage);
+
+	
+
+		if (isEnemyDead) {
+			scoreFromDamage += Enemy->GetScoreValue();
+		}
+
+		CurrentScore += scoreFromDamage;
+		
+			// Inform the enemy of damage and check whether the enemy died as a result.
+		//if (Enemy->ReceiveDamage(/*PlayerProjectileDamage*/EquippedWeaponComponent->GetWeaponData().BaseWeaponDamage, isEnemyDead, scoreFromDamage)) { // enemy recieve damage could return the damage done (int) in order to add that to the score
+		//	CurrentScore += ScoreValue;
+		//}
+		//else CurrentScore += scoreFromDamage;
+	}
 
 	GetController()->PlayerState->Score = CurrentScore; // needs storing. Could pass this to the server to validate
 
 	//NOTE: It isn't safe to store score on the actor, as it could potentially be cheated.
+
 
 }
 

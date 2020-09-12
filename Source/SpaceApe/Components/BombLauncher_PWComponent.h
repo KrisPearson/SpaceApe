@@ -4,19 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "Components/PlayerWeaponComponent.h"
-#include "LaserPWComponent.generated.h"
+#include "BombLauncher_PWComponent.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SPACEAPE_API ULaserPWComponent : public UPlayerWeaponComponent
+class SPACEAPE_API UBombLauncher_PWComponent : public UPlayerWeaponComponent
 {
 	GENERATED_BODY()
 
-
-	void Shoot(FVector _FireDirection) override;
+		UBombLauncher_PWComponent();
 	
-
-	void BeginPlay() override;
+		virtual void Shoot(FVector _FireDirection) override;
+	
 };

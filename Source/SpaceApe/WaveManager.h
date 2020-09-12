@@ -194,6 +194,8 @@ private:
 	class AWaveTextRenderActor* WaveTextActor;
 	class UTextRenderComponent* WaveTextActorRenderer;
 
+	bool bHasFinishedSpawning;
+
 #pragma region Initialisation Functions
 
 	UFUNCTION(BlueprintCallable)

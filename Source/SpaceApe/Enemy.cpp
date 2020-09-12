@@ -6,6 +6,7 @@
 #include "Runtime/Engine/Classes/Materials/MaterialInstance.h"
 #include "Net/UnrealNetwork.h"
 #include "Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h"
+#include "Pickups/WeaponPickup.h"
 #include "BehaviorTree/BehaviorTree.h"
 
 
@@ -62,38 +63,55 @@ void AEnemy::BeginPlay() {
 This is called by the attacking class following a successful attack.
 Returns a bool in order to inform the attacking class of the enemy's demise.
 */
-bool AEnemy::ReceiveDamage(int _DamageAmount) {
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ReceiveDamage Called on Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
+void AEnemy::ReceiveDamage(int _DamageAmount, bool& _IsDead, int& _ScoreToAdd) {
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ReceiveDamage Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
 	//DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
 
+	// could pass enemyscore value + damage here? Perhaps add to a single in return value, as opposed to pointer params? Leave it as is for now....
 
-	if (HasAuthority()) {
+	if (Role < ROLE_Authority)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WARNING: ServerReceiveDamage Disabled"));
+
+	//	ServerReceiveDamage(_DamageAmount);
+	}
+	else {
+		
+		// Add the damage dealt to the score and check whether the damage dealt leaves the enemy at 0hp. If so, then remove the remainder.
+		_ScoreToAdd = (CurrentHealthPoints - _DamageAmount) <= 0 ? (_DamageAmount - (CurrentHealthPoints % _DamageAmount)) : _DamageAmount;
 		CurrentHealthPoints -= _DamageAmount;
+
 		if (!CheckIfAlive())
 		{
+			_IsDead = true;
 			EnemyDeath();
-			return true;
-		}
+
+		} 
 		else {
-			//PlayDamageFlash();
+			_IsDead = false;
 			MulticastPlayDamageFlash();
 		}
 	}
-	else
-	{
-		ServerReceiveDamage(_DamageAmount);
-	}
 
-	return false;
 }
 
+/*
+
 void AEnemy::ServerReceiveDamage_Implementation(int _DamageAmount) {
-	ReceiveDamage(_DamageAmount);
+
+	UE_LOG(LogTemp, Warning, TEXT("ServerReceiveDamage_Implementation called"));
+
+
+	bool B;
+	int I;
+
+	ReceiveDamage(_DamageAmount, B, I);
 }
 
 bool AEnemy::ServerReceiveDamage_Validate(int _DamageAmount) {
 	return true;
 }
+*/
 
 
 /*
@@ -126,8 +144,15 @@ bool AEnemy::CheckIfAlive() {
 Destroy this actor following a broadcast to the WaveManager.
 */
 void AEnemy::EnemyDeath() {
+	SpawnPickup();
 	EnemyDeathDelegate.Broadcast(this);
 	Destroy();
+}
+
+
+void AEnemy::SpawnPickup() {
+	AWeaponPickup* NewPickup = GetWorld()->SpawnActor<AWeaponPickup>(this->GetActorLocation(), this->GetActorRotation());
+
 }
 
 int AEnemy::GetScoreValue() {

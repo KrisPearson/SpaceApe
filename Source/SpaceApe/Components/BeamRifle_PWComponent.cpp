@@ -1,0 +1,208 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#include "BeamRifle_PWComponent.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Components/ObjectPoolComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "EngineUtils.h"
+#include "Components/SplineComponent.h"
+#include "UObject/UObjectGlobals.h"
+#include "SpaceApePlayerCharacter.h"
+#include "UObject/ConstructorHelpers.h"
+
+
+UBeamRifle_PWComponent::UBeamRifle_PWComponent() {
+	UE_LOG(LogTemp, Warning, TEXT(" UBeamRifle_PWComponent Constructor"));
+
+	//static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(TEXT("StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'"));
+	//static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(TEXT("ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'"));
+	//static ConstructorHelpers::FObjectFinder<UParticleSystem> HitParticleAsset(TEXT("ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'"));
+
+	//static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'"));
+	//static ConstructorHelpers::FObjectFinder<USoundBase> HitAudio(TEXT("SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'"));
+
+
+	TArray<class UProjectileComponent*> ProjectileComponentArray;
+	FString MeshPath;
+	FString ProjectileParticlePath;
+	FString HitParticlePath;
+	FString FireAudioPath;
+	FString HitAudioPath;
+	float DelayBetweenShots;
+	int DamageOfProjectiles;
+	float MovementSpeedOfProjectiles;
+
+	switch (WeaponTier) {
+	case EWeaponTier::WT_1:
+		MeshPath = "StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'";
+		ProjectileParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'";
+		HitParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'";
+		FireAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'";
+		HitAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'";
+		DelayBetweenShots = 1.4f;
+		DamageOfProjectiles = 80;
+		MovementSpeedOfProjectiles = 9500;
+		break;
+
+	case EWeaponTier::WT_2:
+		MeshPath = "StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'";
+		ProjectileParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'";
+		HitParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'";
+		FireAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'";
+		HitAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'";
+		DelayBetweenShots = 1.4f;
+		DamageOfProjectiles = 80;
+		MovementSpeedOfProjectiles = 9500;
+		break;
+
+	case EWeaponTier::WT_3:
+		MeshPath = "StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'";
+		ProjectileParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'";
+		HitParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'";
+		FireAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'";
+		HitAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'";
+		DelayBetweenShots = 1.4f;
+		DamageOfProjectiles = 80;
+		MovementSpeedOfProjectiles = 9500;
+		break;
+
+	default:
+		MeshPath = "StaticMesh'/Game/TwinStick/Meshes/BeamColissionMesh.BeamColissionMesh'";
+		ProjectileParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/TrailBeam_Particle.TrailBeam_Particle'";
+		HitParticlePath = "ParticleSystem'/Game/Particles/WeaponParticles/BeamHit_Particle.BeamHit_Particle'";
+		FireAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserFire_01.BeamLaserFire_01'";
+		HitAudioPath = "SoundWave'/Game/Audio/WeaponSounds/BeamLaserHit_01.BeamLaserHit_01'";
+		DelayBetweenShots = 1.4f;
+		DamageOfProjectiles = 80;
+		MovementSpeedOfProjectiles = 9500;
+		break;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> ProjectileMeshAsset(*MeshPath);
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> ProjectileParticleAsset(*ProjectileParticlePath);
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> HitParticleAsset(*HitParticlePath);
+	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudioAsset(*FireAudioPath);
+	static ConstructorHelpers::FObjectFinder<USoundBase> HitAudioAsset(*HitAudioPath);
+
+	WeaponData = FWeaponData(
+		ProjectileComponentArray,
+		ProjectileMeshAsset.Object,
+		ProjectileParticleAsset.Object,
+		HitParticleAsset.Object,
+		FireAudioAsset.Object,
+		HitAudioAsset.Object,
+		DelayBetweenShots,
+		DamageOfProjectiles,
+		MovementSpeedOfProjectiles
+	);
+
+	/*
+	WeaponData = FWeaponData(
+		ProjectileComponentArray, // Components to be added to the projectile actor
+		ProjectileMeshAsset.Object, // Mesh used for collision events and visual appearance
+		ProjectileParticleAsset.Object, // The constant visual effect particle ( for trails etc)
+		HitParticleAsset.Object,
+		FireAudio.Object, // Sound effect played when fired
+		HitAudio.Object, // Sound effect played when hit
+		1.4f, // Delay between shots
+		100, // Damage of projectiles
+		9500 // Movement Speed of projectiles
+	);
+	*/
+
+
+	BeamSpline = CreateDefaultSubobject<USplineComponent>(TEXT("Beam Spline Component"));
+	BeamSpline->bSplineHasBeenEdited = true;
+
+	PrimaryComponentTick.bCanEverTick = false;
+	//SetComponentTickEnabled(true);
+}
+
+void UBeamRifle_PWComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction * ThisTickFunction) {
+
+	UE_LOG(LogTemp, Warning, TEXT(" UBeamRifle_PWComponent  Tick"));
+	// if (beamrpjectiles ! empty) 
+	//for beamprojectiles
+	//move each along spline -time between launch
+
+	//clear beam projectiles at end of spline? (what if it is a refraction beam? A:add more points to spline and keep check to update spline points)
+
+	if (CurrentBeamProjectiles.Num() > 0) {
+		for (int i = 0; i < CurrentBeamProjectiles.Num(); i++) {
+			CurrentBeamProjectiles[i]->SetActorLocation(BeamSpline->GetLocationAtTime(ShootTime += DeltaTime, ESplineCoordinateSpace::Local, true));
+			//shoot time plus delta time
+		}
+
+	}
+
+}
+
+void UBeamRifle_PWComponent::Shoot(FVector _FireDirection) {
+	FireDirection = _FireDirection;
+
+	FireRotation = FireDirection.Rotation();
+
+	FVector GunOffset = FVector(0.f, 0.f, -30.f);
+
+	SpawnLocationForbeam = GetOwner()->GetActorLocation() + FireRotation.RotateVector(GunOffset);
+
+	LoopIndex = 0;
+	GetWorld()->GetTimerManager().SetTimer(FireLoopTimerHandle, this, &UBeamRifle_PWComponent::FireLoop, TimeBetweenProjectiles, true);
+
+}
+
+void UBeamRifle_PWComponent::FireLoop() {
+	if (BeamSpline != nullptr) {
+
+		TArray<FVector> SplinePoints;
+		SplinePoints.Add(SpawnLocationForbeam);
+
+		SplinePoints.Add(FVector(600, 600, 0));
+
+		SplinePoints.Add(FVector(1000, 1000, 0));
+
+		BeamSpline->SetSplinePoints(SplinePoints, ESplineCoordinateSpace::Local, true);
+		BeamSpline->SetTangentAtSplinePoint(1, FVector(1000, 7000, 0), ESplineCoordinateSpace::Local, true);
+	}
+
+
+	//const FVector SpawnLocation = GetOwner()->GetActorLocation() + FireRotation.RotateVector(GunOffset);
+
+	ASpaceApeProjectile* Projectile = Cast<ASpaceApeProjectile>(PlayerProjectilePoolRef->GetReusableReference());
+
+	if (Projectile != nullptr) {
+
+		CheckAndUpdateProjectile(Projectile);
+
+		Projectile->SetProjectileLocationAndDirection(SpawnLocationForbeam, FireDirection, true); // still want to do this for the beam?
+
+																							 //Projectile->GetParticleComponent()->SetBeamSourcePoint(1, SpawnLocation, 1);
+																							 //Projectile->GetParticleComponent()->SetBeamTargetPoint(1, SpawnLocation * _FireDirection, 1);
+
+																							 //UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData.ProjectileParticleSystem, SpawnLocation, FRotator::ZeroRotator, false);
+
+																							 //if (beam)
+																							 //{
+																							 //	beam->SetBeamSourcePoint(1, SpawnLocation, 1);
+																							 //	beam->SetBeamTargetPoint(1, (SpawnLocation +_FireDirection * 500), 1);
+																							 //}
+		CurrentBeamProjectiles.Add(Projectile); //need to consider order they are added in order to correctly adjust time input for spline?
+		// tell component on projectile to follow spline?
+
+
+		ShootTime = GetWorld()->GetTimeSeconds();
+
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("Projectile is nullptr. Either cast failed, or no projectile was returned from the Object Pool."));
+		return;
+	}
+	LoopIndex++;
+	if (LoopIndex >= NumberOfProjectiles) {
+		UE_LOG(LogTemp, Warning, TEXT("LoopIndex >= NumberOfProjectiles"));
+		//GetWorld()->GetTimerManager().SetTimer(FireLoopTimerHandle, this, &UBeamRifle_PWComponent::FireLoop, TimeBetweenProjectiles, false);
+	
+		GetWorld()->GetTimerManager().ClearTimer(FireLoopTimerHandle);
+	}
+}

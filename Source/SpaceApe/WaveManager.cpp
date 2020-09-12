@@ -179,6 +179,7 @@ Resets the values associated with recording the progress of each wave, increases
 and calls GenerateWave. It then triggers a timer handle to call the Start Spawning method.
 */
 void UWaveManager::StartWave() {
+	bHasFinishedSpawning = false;
 	NumberOfGeneratedWaveActions = 0;
 	CurrentWaveActionIndex = 0;
 	CurrentWaveCount++;
@@ -218,6 +219,7 @@ void UWaveManager::StartActionTimer() {
 			PerformWaveAction();
 		}
 	}
+	else bHasFinishedSpawning = true; // enabling this bool permits the manager to begin the next wave
 }
 
 /*
@@ -226,7 +228,7 @@ the defined type at the required location.
 */
 void UWaveManager::PerformWaveAction() {
 	UE_LOG(LogTemp, Warning, TEXT("PerformWaveAction."));
-	FWaveSpawnAction Action = CurrentWave->WaveActionsList[CurrentWaveActionIndex];
+	FWaveSpawnAction Action = CurrentWave->WaveActionsList[CurrentWaveActionIndex]; // occasional runtime error. Appears to be the wave ending prematurely, clearing the current wave before the spawn loop is complete
 
 	FVector Location = FindSpawnPoint(Action.SpawnLocationData);
 
@@ -267,7 +269,7 @@ and ultimately starting the next wave,
 void UWaveManager::RegisterEnemyDeath(AEnemy* _deadEnemyRef) {
 	AliveEnemyArray.Remove(_deadEnemyRef);
 
-	if (AliveEnemyArray.Num() <= 0 ) { // <<<<<<<<<<<Should be improved to use NumberOfGeneratedWaveActions (or similar counter)
+	if (AliveEnemyArray.Num() <= 0 && bHasFinishedSpawning) { // <<<<<<<<<<<Should be improved to use NumberOfGeneratedWaveActions (or similar counter)
 		StartWave();
 	}
 }
@@ -395,7 +397,7 @@ void UWaveManager::GenerateWave() {
 	CurrentWave = NULL;
 
 	// Determines the number and types of enemies. (Eventually this will be recalculated each wave in order to increase difficulty as the game progresses)
-	int CurrentSpendableEnemyPoints = 1000; 
+	int CurrentSpendableEnemyPoints = 1000 * CurrentWaveCount; 
 
 	TArray<FWaveSpawnAction> SpawnActionsArray;
 
@@ -445,6 +447,9 @@ By passing in the current remaining points as a reference, this method reduces t
 the method to be used as a single line in the FWaveAction constructor parameter.
 */
 TSubclassOf<AEnemy> UWaveManager::GenerateEnemy(int& _AvailablePointsToSpend) {
+
+
+	int points = _AvailablePointsToSpend;
 
 	double p = FMath::FRand(); // Generate a random number between 0 and 1.
 	double cumulativeProbability = 0.0;

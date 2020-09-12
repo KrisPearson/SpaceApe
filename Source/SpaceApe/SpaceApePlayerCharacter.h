@@ -6,6 +6,14 @@
 #include "GameFramework/Character.h"
 #include "SpaceApePlayerCharacter.generated.h"
 
+
+UENUM(BlueprintType)		//"BlueprintType" is essential to include
+enum class EWeaponTier : uint8 {
+	WT_1 	UMETA(DisplayName = "WeaponTier_1"),
+	WT_2 	UMETA(DisplayName = "WeaponTier_2"),
+	WT_3 	UMETA(DisplayName = "WeaponTier_3")
+};
+
 UCLASS()
 class SPACEAPE_API ASpaceApePlayerCharacter : public ACharacter
 {
@@ -72,8 +80,12 @@ public:
 	UPROPERTY(Category = Gameplay, EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<class UPlayerWeaponComponent> DefaultWeaponComponent;
 
+	EWeaponTier GetCurrentWeaponTier() { return CurrentWeaponTier;  }
+
 
 private:
+
+	class ASpaceApeProjectile* CurrentProjectileTypeObject;
 
 	/* Flag to control firing  */
 	uint32 bCanFire : 1;
@@ -91,6 +103,10 @@ private:
 	UPROPERTY()
 	class UPlayerWeaponComponent* EquippedWeaponComponent;
 
+	// This keeps track of the weapon tier of the character, and is used to change the weapon data values
+	EWeaponTier CurrentWeaponTier;
+
+
 
 protected:
 
@@ -101,11 +117,19 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		float PlayerProjectileDamage = 10.f;
 
-	UFUNCTION()
-	void DealDamage(AActor* _Enemy);
+	class UObjectPoolComponent* ProjectilePool;
+
+	//void CheckTierUpgrade();
 
 
 public:
+
+	UFUNCTION()
+		void CollectPickup(class ABasePickup* _PickupType);
+
+	UFUNCTION()
+		void DealDamage(AActor* _Enemy);
+
 	/** Returns ShipMeshComponent subobject **/
 	FORCEINLINE class UStaticMeshComponent* GetShipMeshComponent() const { return ShipMeshComponent; }
 	/** Returns CameraComponent subobject **/
@@ -136,10 +160,11 @@ public:
 	int PlayerStateIndex;
 
 
-	UFUNCTION()
+	//UFUNCTION()  //UFunction cannot be overloaded 
 		void ChangeWeapon(TSubclassOf<class UPlayerWeaponComponent> _NewWeapon);
 
-
+	//UFUNCTION()
+	//	void ChangeWeapon(class UPlayerWeaponComponent* _NewWeapon);
 
 	FORCEINLINE float GetCurrentScore() const { return CurrentScore; }
 	//FORCEINLINE void SpendGold(float Amount) { Amount > GoldCount ? GoldCount += 0.0f : GoldCount -= Amount; GoldCount = FMath::Clamp(GoldCount, 0.0f, 99999.0f); }
