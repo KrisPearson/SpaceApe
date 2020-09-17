@@ -161,7 +161,7 @@ In order to enable the projectile over the network, this method should  be calle
 */
 void ASpaceApeProjectile::ToggleEnabled(bool _value) {
 	
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ToggleEnabled. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ToggleEnabled. Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
 
 	//ProjectileMesh->SetVisibility(_value); // need some kind of check to see whether we want this or not
 	if (_value) { // enable the projectile
@@ -200,8 +200,8 @@ Updates the location and velocity of the projectile.
 This is the intended method for firing the projectile from the weapon component.
 */
 void ASpaceApeProjectile::SetProjectileLocationAndDirection(FVector _Loc, FVector _Vel, bool _ToggleEnabled) {
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" SetProjectileLocationAndDirection. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
-	if (Role == ROLE_Authority) {
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" SetProjectileLocationAndDirection. Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
+	if (HasAuthority()) {
 		MulticastSetLocationAndVelocityDirection(_Loc, _Vel, _ToggleEnabled);
 	}
 }
@@ -209,7 +209,7 @@ void ASpaceApeProjectile::SetProjectileLocationAndDirection(FVector _Loc, FVecto
 void ASpaceApeProjectile::PassNewWeaponData(FWeaponData _NewWeaponData, int _NewWeaponDataID) {
 
 	UE_LOG(LogTemp, Log, TEXT(" PassNewWeaponData old id = %d __ new id = %d"), WeaponDataID, _NewWeaponDataID);
-	if (Role == ROLE_Authority) {
+	if (HasAuthority()) {
 
 		//perform a check here to see if in use. If true, then delay the update.
 
@@ -228,8 +228,8 @@ void ASpaceApeProjectile::PassNewWeaponData(FWeaponData _NewWeaponData, int _New
 
 		//MulticastAssignNewWeaponData(_NewWeaponData); // this sets the struc to default params for some reason...
 
-		//if (Role == ROLE_Authority) {}// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileDamage = %d. Server =: %s"), _NewWeaponData.BaseWeaponDamage, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
-		//else GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileSpeed = %f. Server =: %s"), _NewWeaponData.BaseProjectileSpeed, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+		//if (HasAuthority()) {}// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileDamage = %d. Server =: %s"), _NewWeaponData.BaseWeaponDamage, HasAuthority() ? TEXT("True") : TEXT("False")));
+		//else GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ProjectileSpeed = %f. Server =: %s"), _NewWeaponData.BaseProjectileSpeed, HasAuthority() ? TEXT("True") : TEXT("False")));
 
 		MulticastAssignWeaponDataValues(_NewWeaponData.ProjectileMeshComponent, _NewWeaponData.ProjectileParticleSystem, _NewWeaponData.HitEffectParticleSystem, _NewWeaponData.HitSound, _NewWeaponData.BaseProjectileSpeed);
 		//MulticastAssignNewWeaponData_Implementation(_NewWeaponData);
@@ -261,7 +261,7 @@ void ASpaceApeProjectile::MulticastAssignWeaponDataValues_Implementation(UStatic
 	HitSoundEffect = _HitSound;
 	//ProjectileDamage = _BaseWeaponDamage;
 	CurrentMoveSpeed = _NewSpeed;
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" MulticastAssignWeaponDataValues_Implementation. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" MulticastAssignWeaponDataValues_Implementation. Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
 }
 
 
@@ -294,7 +294,7 @@ void ASpaceApeProjectile::MulticastSetLocationAndVelocityDirection_Implementatio
 	
 	//ProjectileMovement->Velocity = FVector(0, 0, 0);
 	//ProjectileMovement->SetVelocityInLocalSpace(_Vel * CurrentMoveSpeed); // Apply velocity in fire direction	
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT(" MulticastSetLocationAndVelocityDirection_Implementation. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT(" MulticastSetLocationAndVelocityDirection_Implementation. Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
 	//UE_LOG(LogTemp, Log, TEXT(" SetVelocityInLocalSpace %f %f %f"), _Vel.X, _Vel.Y, _Vel.Z);
 
 }
@@ -315,7 +315,7 @@ Updates the velocity o the projectile on cliets. Called whenever a change is mad
 Only works with bReplicateMovement.....
 */
 void  ASpaceApeProjectile::PostNetReceiveVelocity(const FVector& NewVelocity) {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ToggleEnabled. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ToggleEnabled. Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
 	
 	UE_LOG(LogTemp, Log, TEXT(" PostNetReceiveVelocity %f %f %f"), NewVelocity.X, NewVelocity.Y, NewVelocity.Z);
 	ProjectileMovement->Velocity = NewVelocity;

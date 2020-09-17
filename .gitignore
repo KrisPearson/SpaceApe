@@ -11,3 +11,4 @@ Saved
 *.xcodeproj
 *.xcworkspace
 .vs/SpaceApe/v16/ipch/AutoPCH/d71ee322345192be/SPACEAPEPROJECTILE.ipch
+*.ipch

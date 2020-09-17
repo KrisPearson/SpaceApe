@@ -64,12 +64,12 @@ This is called by the attacking class following a successful attack.
 Returns a bool in order to inform the attacking class of the enemy's demise.
 */
 void AEnemy::ReceiveDamage(int _DamageAmount, bool& _IsDead, int& _ScoreToAdd) {
-	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ReceiveDamage Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ReceiveDamage Called on Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
 	//DynamicEnemyMaterial->SetScalarParameterValue(FName("StartTime"), World->GetTimeSeconds());
 
 	// could pass enemyscore value + damage here? Perhaps add to a single in return value, as opposed to pointer params? Leave it as is for now....
 
-	if (Role < ROLE_Authority)
+	if (GetLocalRole() != ROLE_Authority)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WARNING: ServerReceiveDamage Disabled"));
 

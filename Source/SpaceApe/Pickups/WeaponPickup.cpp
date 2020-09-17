@@ -39,7 +39,7 @@ void AWeaponPickup::OnBeginOverlapAction(UPrimitiveComponent * OverlappedCompone
 }
 
 void AWeaponPickup::AssignRandomPickupType() {
-	if (Role == ROLE_Authority) {
+	if (HasAuthority()) {
 		EWeaponPickupType RandomWeaponType = static_cast<EWeaponPickupType>(FMath::RandRange(0, 3));
 
 		FString MaterialFilePath;

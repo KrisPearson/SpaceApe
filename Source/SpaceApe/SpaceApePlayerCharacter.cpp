@@ -86,8 +86,8 @@ void ASpaceApePlayerCharacter::BeginPlay() {
 	//UPlayerWeaponComponent* NewWeapon = Cast<UPlayerWeaponComponent>(DefaultWeaponComponent);
 	ChangeWeapon(DefaultWeaponComponent);
 
-	if (Role == ROLE_Authority) {
-		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" FillPool Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	if (HasAuthority()) {
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" FillPool Called on Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
 		ProjectilePool->FillPool(ASpaceApeProjectile::StaticClass(), 60);
 		if (EquippedWeaponComponent) { EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool); }
 
@@ -101,7 +101,7 @@ void ASpaceApePlayerCharacter::BeginPlay() {
 
 	/*
 	else {
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" FillPool Called on Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" FillPool Called on Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
 		
 		//ProjectilePool->FillPool(ASpaceApeProjectile::StaticClass(), 5);
 		//if (EquippedWeaponComponent) { EquippedWeaponComponent->SetObjectPoolReference(ProjectilePool); }
@@ -140,10 +140,10 @@ void ASpaceApePlayerCharacter::Tick(float DeltaSeconds) {
 
 	if (EquippedWeaponComponent != nullptr) {
 		if (FireDirection.SizeSquared() > 0.0f) {
-			if (Role == ROLE_AutonomousProxy) {
+			if (GetLocalRole() == ROLE_AutonomousProxy) {
 				ServerFire(FireDirection);
 			}
-			else if (Role == ROLE_Authority) {
+			else if (HasAuthority()) {
 				Fire(FireDirection);
 			}
 		}
@@ -314,7 +314,7 @@ This method should eventually be made private/ protected, and some kind of publi
 */
 void ASpaceApePlayerCharacter::ChangeWeapon(TSubclassOf<UPlayerWeaponComponent> _NewWeapon) {
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ChangeWeapon. Server =: %s"), Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" ChangeWeapon. Server =: %s"), HasAuthority() ? TEXT("True") : TEXT("False")));
 
 	if (_NewWeapon) {
 
@@ -330,7 +330,7 @@ void ASpaceApePlayerCharacter::ChangeWeapon(TSubclassOf<UPlayerWeaponComponent> 
 
 		FWeaponData NewWeaponData = EquippedWeaponComponent->GetWeaponData();
 
-		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Emerald, FString::Printf(TEXT(" GetWeaponData Speed =  %f. Is Server = %s"), NewWeaponData.BaseProjectileSpeed, Role == ROLE_Authority ? TEXT("True") : TEXT("False")));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Emerald, FString::Printf(TEXT(" GetWeaponData Speed =  %f. Is Server = %s"), NewWeaponData.BaseProjectileSpeed, HasAuthority() ? TEXT("True") : TEXT("False")));
 	}
 
 }

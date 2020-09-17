@@ -17,7 +17,7 @@ ABasePickup::ABasePickup()
 	//PickupMesh->SetStaticMesh(ProjectileMeshAsset.Object);
 	//PickupMesh->SetupAttachment(RootComponent);
 	//PickupMesh->BodyInstance.SetCollisionProfileName("Projectile"); // should be pickup
-	PickupMesh->bGenerateOverlapEvents = true;
+	PickupMesh->SetGenerateOverlapEvents(true); // bGenerateOverlapEvents = true;
 	PickupMesh->OnComponentBeginOverlap.AddDynamic(this, &ABasePickup::OnBeginOverlap); // set up a notification for when this component hits something
 	PickupMesh->SetupAttachment(MyRoot);
 
